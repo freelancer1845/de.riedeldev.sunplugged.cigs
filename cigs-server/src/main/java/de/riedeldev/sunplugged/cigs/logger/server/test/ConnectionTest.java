@@ -4,7 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import de.riedeldev.sunplugged.cigs.logger.server.main.MainApplication;
+import de.riedeldev.sunplugged.cigs.logger.server.MainApplication;
 
 @Service
 public class ConnectionTest {
