@@ -11,4 +11,6 @@ public interface DataPointRepository extends JpaRepository<DataPoint, Long> {
 
     Stream<DataPoint> findAllBySession(LogSession session);
 
+    Long countBySession(LogSession session);
+
 }

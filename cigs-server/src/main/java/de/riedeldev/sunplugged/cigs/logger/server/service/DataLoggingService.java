@@ -2,6 +2,7 @@ package de.riedeldev.sunplugged.cigs.logger.server.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.transaction.Transactional;
@@ -47,14 +48,17 @@ public class DataLoggingService {
         sessionRepo.save(session);
     }
 
-    @Transactional
     public Stream<DataPoint> getDatapointsOfSessionAsStream(LogSession session) {
         return dataRepo.findAllBySession(session);
     }
 
+    // TODO : This currently uses a hack to avoid transactional error...
     @Transactional
     public Stream<LogSession> streamSessionsFromLast() {
-        return sessionRepo.findAllByOrderByIdDesc();
+        Stream<LogSession> stream = sessionRepo.findAllByOrderByIdDesc();
+        List<LogSession> sessions = stream.collect(Collectors.toList());
+
+        return sessions.stream();
     }
 
     public LogSession createNewSession() {
@@ -64,6 +68,10 @@ public class DataLoggingService {
 
     public Long sessionsCount() {
         return sessionRepo.count();
+    }
+
+    public Long getCountOfDataPointsBySession(LogSession session) {
+        return dataRepo.countBySession(session);
     }
 
 }
