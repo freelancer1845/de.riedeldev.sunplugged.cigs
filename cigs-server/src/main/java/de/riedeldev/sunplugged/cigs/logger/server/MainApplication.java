@@ -21,7 +21,7 @@ public class MainApplication {
     @Bean
     public CommandLineRunner loadData(DataLoggingService service) {
         return args -> {
-            for (int j = 0; j < 100; j++) {
+            for (int j = 0; j < 20; j++) {
                 LogSession session = service.createNewSession();
                 System.out.println("Session Created");
                 for (int i = 0; i < 100; i++) {

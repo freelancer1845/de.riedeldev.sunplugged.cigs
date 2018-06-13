@@ -1,31 +1,39 @@
 package de.riedeldev.sunplugged.cigs.logger.server.ui;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.opencsv.exceptions.CsvDataTypeMismatchException;
+import com.opencsv.exceptions.CsvRequiredFieldEmptyException;
 import com.vaadin.data.provider.ListDataProvider;
 import com.vaadin.icons.VaadinIcons;
-import com.vaadin.server.VaadinRequest;
+import com.vaadin.server.FileDownloader;
+import com.vaadin.server.Resource;
+import com.vaadin.server.StreamResource;
+import com.vaadin.server.StreamResource.StreamSource;
 import com.vaadin.spring.annotation.SpringComponent;
 import com.vaadin.spring.annotation.UIScope;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.DateField;
 import com.vaadin.ui.Grid;
-import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.NativeButton;
-import com.vaadin.ui.VerticalLayout;
-import com.vaadin.ui.renderers.ButtonRenderer;
-import com.vaadin.ui.themes.ValoTheme;
 import com.vaadin.ui.Grid.SelectionMode;
+import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.VerticalLayout;
+import com.vaadin.ui.themes.ValoTheme;
 
 import de.riedeldev.sunplugged.cigs.logger.server.model.LogSession;
+import de.riedeldev.sunplugged.cigs.logger.server.service.DataCSVService;
 import de.riedeldev.sunplugged.cigs.logger.server.service.DataLoggingService;
+import lombok.extern.slf4j.Slf4j;
 
 @SpringComponent
 @UIScope
+@Slf4j
 public class LogSessionsComponent extends VerticalLayout {
 
 	/**
@@ -33,7 +41,9 @@ public class LogSessionsComponent extends VerticalLayout {
 	 */
 	private static final long serialVersionUID = 8763555323942205501L;
 
-	private DataLoggingService service;
+	private DataLoggingService logService;
+
+	private DataCSVService csvService;
 
 	private DateField startDate;
 
@@ -42,8 +52,9 @@ public class LogSessionsComponent extends VerticalLayout {
 	private ListDataProvider<LogSession> dataProvider;
 
 	@Autowired
-	public LogSessionsComponent(DataLoggingService service) {
-		this.service = service;
+	public LogSessionsComponent(DataLoggingService service, DataCSVService csvService) {
+		this.logService = service;
+		this.csvService = csvService;
 
 		HorizontalLayout dateLayout = new HorizontalLayout();
 
@@ -104,11 +115,11 @@ public class LogSessionsComponent extends VerticalLayout {
 
 				.setCaption("End Time");
 
-		grid.addColumn(session -> service.getCountOfDataPointsBySession(session)).setCaption("Data Points");
+		grid.addColumn(session -> logService.getCountOfDataPointsBySession(session)).setCaption("Data Points");
 
 		grid.addComponentColumn(this::createActionsForSession).setCaption("Actions");
 
-		dataProvider = new ListDataProvider<>(service.streamSessionsFromLast().collect(Collectors.toList()));
+		dataProvider = new ListDataProvider<>(logService.streamSessionsFromLast().collect(Collectors.toList()));
 		dataProvider.addFilter(session -> {
 			if (endDate.isEmpty() == false) {
 				return session.getEndDate().toLocalDate().isBefore(endDate.getValue().plusDays(1));
@@ -137,8 +148,35 @@ public class LogSessionsComponent extends VerticalLayout {
 		return grid;
 	}
 
-	private void downloadSession(LogSession session) {
-		System.out.println("Trying to download + " + session.getId());
+	private FileDownloader getSessionDownloader(LogSession session) {
+		FileDownloader downloader = new FileDownloader(createSessionDownloadResource(session));
+		return downloader;
+	}
+
+	private Resource createSessionDownloadResource(LogSession session) {
+		return new StreamResource(new StreamSource() {
+
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = -1011443990479189684L;
+
+			@Override
+			public InputStream getStream() {
+
+				String csvString;
+				try {
+					csvString = csvService.sessionToCsv(session);
+					return new ByteArrayInputStream(csvString.getBytes());
+				} catch (CsvDataTypeMismatchException | CsvRequiredFieldEmptyException e) {
+					log.error("Failed to convert session to csv!", e);
+					return new ByteArrayInputStream("Error creating csv...".getBytes());
+				}
+
+			}
+
+		}, String.format("cigs-%s.csv",
+				session.getStartDate().format(DateTimeFormatter.ofPattern("yyyy-dd-MM_HH-mm"))));
 	}
 
 	private HorizontalLayout createActionsForSession(LogSession session) {
@@ -146,12 +184,12 @@ public class LogSessionsComponent extends VerticalLayout {
 		Button downloadButton = new Button("Downlaod");
 		downloadButton.setIcon(VaadinIcons.DOWNLOAD);
 		downloadButton.setStyleName(ValoTheme.BUTTON_PRIMARY);
-		downloadButton.addClickListener(click -> downloadSession(session));
+		getSessionDownloader(session).extend(downloadButton);
 
 		layout.addComponent(downloadButton);
-		
+
 		Button deleteButton = new Button("Delete");
-		deleteButton.setIcon(VaadinIcons.DEL);
+		deleteButton.setIcon(VaadinIcons.FILE_REMOVE);
 		deleteButton.setStyleName(ValoTheme.BUTTON_DANGER);
 		deleteButton.addClickListener(click -> {
 			ConfirmationDialog.confirmAndDo(getUI(), "Delete Session", "Are you sure you want to delete this session?",
@@ -161,14 +199,14 @@ public class LogSessionsComponent extends VerticalLayout {
 						}
 					});
 		});
-		
+
 		layout.addComponent(deleteButton);
 
 		return layout;
 	}
 
 	private void deleteSession(LogSession session) {
-		service.deleteLogSession(session);
+		logService.deleteLogSession(session);
 	}
 
 }

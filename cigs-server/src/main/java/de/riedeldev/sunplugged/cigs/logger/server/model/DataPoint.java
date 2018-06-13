@@ -15,21 +15,21 @@ import lombok.Data;
 @Data
 public class DataPoint {
 
-    @Id
-    @GeneratedValue
-    private Long id;
+	@Id
+	@GeneratedValue
+	private Long id;
 
-    private LocalDateTime dateTime;
+	private LocalDateTime dateTime;
 
-    @ManyToOne(targetEntity = LogSession.class, optional = false)
-    private LogSession session;
+	@ManyToOne(targetEntity = LogSession.class, optional = false)
+	private LogSession session;
 
-    private Double substrateTempOne;
+	private Double substrateTempOne;
 
-    private Double substrateTempTwo;
+	private Double substrateTempTwo;
 
-    private Double substrateTempThree;
+	private Double substrateTempThree;
 
-    private Double substrateTempFour;
+	private Double substrateTempFour;
 
 }
