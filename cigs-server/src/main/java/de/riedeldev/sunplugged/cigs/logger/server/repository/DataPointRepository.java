@@ -13,4 +13,6 @@ public interface DataPointRepository extends JpaRepository<DataPoint, Long> {
 
     Long countBySession(LogSession session);
 
+    void deleteAllBySession(LogSession session);
+    
 }

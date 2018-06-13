@@ -73,5 +73,10 @@ public class DataLoggingService {
     public Long getCountOfDataPointsBySession(LogSession session) {
         return dataRepo.countBySession(session);
     }
+    
+    public void deleteLogSession(LogSession session) {
+    	dataRepo.deleteAllBySession(session);
+    	sessionRepo.delete(session);
+    }
 
 }
