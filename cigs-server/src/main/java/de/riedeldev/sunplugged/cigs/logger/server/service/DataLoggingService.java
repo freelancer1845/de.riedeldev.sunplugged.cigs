@@ -1,6 +1,7 @@
 package de.riedeldev.sunplugged.cigs.logger.server.service;
 
 import java.time.LocalDateTime;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -20,63 +21,79 @@ import de.riedeldev.sunplugged.cigs.logger.server.repository.LogSessionRepositor
 @Service
 public class DataLoggingService {
 
-    private LogSessionRepository sessionRepo;
+	public interface LiveListener {
+		void newDataPoint(DataPoint point);
+	}
 
-    private DataPointRepository dataRepo;
+	private LogSessionRepository sessionRepo;
 
-    @Autowired
-    public DataLoggingService(LogSessionRepository sessionRepo, DataPointRepository dataRepo) {
-        this.sessionRepo = sessionRepo;
-        this.dataRepo = dataRepo;
-    }
+	private DataPointRepository dataRepo;
 
-    public List<LogSession> getSessions() {
-        return sessionRepo.findAll();
-    }
+	private List<LiveListener> liveListeners = new LinkedList<>();
 
-    public void addDataPoint(DataPoint point, Long sessionId) {
-        LogSession session = sessionRepo.findById(sessionId)
-                                        .orElseThrow(() -> new IllegalArgumentException(
-                                                String.format("No Session with id %d exists.", sessionId)));
-        if (session.getStartDate() == null) {
-            session.setStartDate(LocalDateTime.now());
-        }
+	@Autowired
+	public DataLoggingService(LogSessionRepository sessionRepo, DataPointRepository dataRepo) {
+		this.sessionRepo = sessionRepo;
+		this.dataRepo = dataRepo;
+	}
 
-        session.setEndDate(point.getDateTime());
-        point.setSession(session);
-        dataRepo.save(point);
-        sessionRepo.save(session);
-    }
+	public List<LogSession> getSessions() {
+		return sessionRepo.findAll();
+	}
 
-    public Stream<DataPoint> getDatapointsOfSessionAsStream(LogSession session) {
-        return dataRepo.findAllBySession(session);
-    }
+	public void registerAsListener(LiveListener listener) {
+		liveListeners.add(listener);
+	}
 
-    // TODO : This currently uses a hack to avoid transactional error...
-    @Transactional
-    public Stream<LogSession> streamSessionsFromLast() {
-        Stream<LogSession> stream = sessionRepo.findAllByOrderByIdDesc();
-        List<LogSession> sessions = stream.collect(Collectors.toList());
+	public LogSession addDataPoint(DataPoint point, LogSession logSession) {
+		if (point.getDateTime() == null) {
+			point.setDateTime(LocalDateTime.now());
+		}
+		LogSession session = sessionRepo.findById(logSession.getId())
+				.orElseThrow(() -> new IllegalArgumentException(
+						String.format("No Session with id %d exists.", logSession.getId())));
+		if (session.getStartDate() == null) {
+			session.setStartDate(point.getDateTime());
+		}
 
-        return sessions.stream();
-    }
+		session.setEndDate(point.getDateTime());
+		point.setSession(session);
+		DataPoint savedPoint = dataRepo.save(point);
 
-    public LogSession createNewSession() {
-        LogSession session = new LogSession();
-        return sessionRepo.save(session);
-    }
+		liveListeners.forEach(listener -> listener.newDataPoint(savedPoint));
+		return sessionRepo.save(session);
+	}
 
-    public Long sessionsCount() {
-        return sessionRepo.count();
-    }
+	@Transactional
+	public List<DataPoint> getDatapointsOfSession(LogSession session) {
+		return dataRepo.findAllBySession(session);
+	}
 
-    public Long getCountOfDataPointsBySession(LogSession session) {
-        return dataRepo.countBySession(session);
-    }
-    
-    public void deleteLogSession(LogSession session) {
-    	dataRepo.deleteAllBySession(session);
-    	sessionRepo.delete(session);
-    }
+	// TODO : This currently uses a hack to avoid transactional error...
+	@Transactional
+	public Stream<LogSession> streamSessionsFromLast() {
+		Stream<LogSession> stream = sessionRepo.findAllByOrderByIdDesc();
+		List<LogSession> sessions = stream.collect(Collectors.toList());
+
+		return sessions.stream();
+	}
+
+	public LogSession createNewSession() {
+		LogSession session = new LogSession();
+		return sessionRepo.save(session);
+	}
+
+	public Long sessionsCount() {
+		return sessionRepo.count();
+	}
+
+	public Long getCountOfDataPointsBySession(LogSession session) {
+		return dataRepo.countBySession(session);
+	}
+
+	public void deleteLogSession(LogSession session) {
+		dataRepo.deleteAllBySession(session);
+		sessionRepo.delete(session);
+	}
 
 }

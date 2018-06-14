@@ -1,7 +1,6 @@
 package de.riedeldev.sunplugged.cigs.logger.server.service;
 
 import java.io.StringWriter;
-import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
 
@@ -34,7 +33,7 @@ public class DataCSVService {
 
 		StatefulBeanToCsv<DataPoint> csvWriter = new StatefulBeanToCsvBuilder<DataPoint>(writer).build();
 
-		csvWriter.write(dataRepo.findAllBySession(session).collect(Collectors.toList()));
+		csvWriter.write(dataRepo.findAllBySession(session));
 
 		return writer.toString();
 	}

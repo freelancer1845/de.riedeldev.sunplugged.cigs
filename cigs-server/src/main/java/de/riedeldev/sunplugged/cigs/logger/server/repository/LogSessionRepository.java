@@ -8,6 +8,6 @@ import de.riedeldev.sunplugged.cigs.logger.server.model.LogSession;
 
 public interface LogSessionRepository extends JpaRepository<LogSession, Long> {
 
-    Stream<LogSession> findAllByOrderByIdDesc();
+	Stream<LogSession> findAllByOrderByIdDesc();
 
 }

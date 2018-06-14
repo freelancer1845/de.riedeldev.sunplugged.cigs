@@ -23,6 +23,8 @@ import com.vaadin.ui.DateField;
 import com.vaadin.ui.Grid;
 import com.vaadin.ui.Grid.SelectionMode;
 import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.TabSheet;
+import com.vaadin.ui.TabSheet.Tab;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
 
@@ -109,20 +111,28 @@ public class LogSessionsComponent extends VerticalLayout {
 	private Grid<LogSession> createGrid() {
 		Grid<LogSession> grid = new Grid<>();
 		grid.setCaption("Sessions");
-		grid.addColumn(session -> session.getStartDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd : HH:mm:ss")))
+		grid.addColumn(session -> session.getStartDate()
+				.format(DateTimeFormatter.ofPattern("yyyy-MM-dd : HH:mm:ss")))
 				.setCaption("Start Time");
-		grid.addColumn(session -> session.getEndDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd : HH:mm:ss")))
+		grid.addColumn(session -> session.getEndDate()
+				.format(DateTimeFormatter.ofPattern("yyyy-MM-dd : HH:mm:ss")))
 
 				.setCaption("End Time");
 
-		grid.addColumn(session -> logService.getCountOfDataPointsBySession(session)).setCaption("Data Points");
+		grid.addColumn(session -> logService.getCountOfDataPointsBySession(session))
+				.setCaption("Data Points");
 
-		grid.addComponentColumn(this::createActionsForSession).setCaption("Actions");
+		grid.addComponentColumn(this::createActionsForSession)
+				.setCaption("Actions");
 
-		dataProvider = new ListDataProvider<>(logService.streamSessionsFromLast().collect(Collectors.toList()));
+		dataProvider = new ListDataProvider<>(logService.streamSessionsFromLast()
+				.collect(Collectors.toList()));
 		dataProvider.addFilter(session -> {
 			if (endDate.isEmpty() == false) {
-				return session.getEndDate().toLocalDate().isBefore(endDate.getValue().plusDays(1));
+				return session.getEndDate()
+						.toLocalDate()
+						.isBefore(endDate.getValue()
+								.plusDays(1));
 			} else {
 				return true;
 			}
@@ -130,7 +140,10 @@ public class LogSessionsComponent extends VerticalLayout {
 		});
 		dataProvider.addFilter(session -> {
 			if (startDate.isEmpty() == false) {
-				return session.getStartDate().toLocalDate().isAfter(startDate.getValue().minusDays(1));
+				return session.getStartDate()
+						.toLocalDate()
+						.isAfter(startDate.getValue()
+								.minusDays(1));
 			} else {
 				return true;
 			}
@@ -175,8 +188,8 @@ public class LogSessionsComponent extends VerticalLayout {
 
 			}
 
-		}, String.format("cigs-%s.csv",
-				session.getStartDate().format(DateTimeFormatter.ofPattern("yyyy-dd-MM_HH-mm"))));
+		}, String.format("cigs-%s.csv", session.getStartDate()
+				.format(DateTimeFormatter.ofPattern("yyyy-dd-MM_HH-mm"))));
 	}
 
 	private HorizontalLayout createActionsForSession(LogSession session) {
@@ -199,8 +212,19 @@ public class LogSessionsComponent extends VerticalLayout {
 						}
 					});
 		});
-
 		layout.addComponent(deleteButton);
+
+		Button viewButton = new Button("View Data");
+		viewButton.setIcon(VaadinIcons.DATABASE);
+		viewButton.setStyleName(ValoTheme.BUTTON_FRIENDLY);
+		viewButton.addClickListener(click -> {
+			TabSheet sheet = (TabSheet) getParent();
+			Tab tab = sheet.addTab(new DataViewComponent(session, logService), session.getStartDate()
+					.format(DateTimeFormatter.ofPattern("yyyy-dd-MM HH:mm")));
+			tab.setClosable(true);
+			sheet.setSelectedTab(tab);
+		});
+		layout.addComponent(viewButton);
 
 		return layout;
 	}
