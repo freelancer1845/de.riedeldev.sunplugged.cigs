@@ -8,18 +8,21 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Entity
 @Table(name = "LOG_SESSIONS")
 @Data
+@EqualsAndHashCode(of = "id")
 public class LogSession {
 
-    @Id
-    @GeneratedValue
-    private Long id;
+	@Id
+	@GeneratedValue
+	private Long id;
 
-    private LocalDateTime startDate;
+	private LocalDateTime startDate;
 
-    private LocalDateTime endDate;
+	private LocalDateTime endDate;
 
+	private String comment = "";
 }

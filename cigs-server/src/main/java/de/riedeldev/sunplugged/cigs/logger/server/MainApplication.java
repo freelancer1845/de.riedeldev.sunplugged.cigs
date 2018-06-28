@@ -28,7 +28,7 @@ public class MainApplication {
 				LogSession session = service.createNewSession();
 				Random random = new Random();
 				System.out.println("Session Created");
-				for (int i = 0; i < 3600 * 5; i++) {
+				for (int i = 0; i < 3600 * 2; i++) {
 					DataPoint dataPoint = new DataPoint();
 					dataPoint.setDateTime(LocalDateTime.now()
 							.plusSeconds(i));

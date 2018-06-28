@@ -14,11 +14,13 @@ import com.opencsv.bean.CsvCustomBindByName;
 
 import de.riedeldev.sunplugged.cigs.logger.server.service.csv.CsvLocalDateTimeConverter;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Entity
 @Table(name = "DATA_POINTS")
 @Data
 @JsonIgnoreProperties
+@EqualsAndHashCode(of = { "id", "dateTime" })
 public class DataPoint {
 
 	@Id

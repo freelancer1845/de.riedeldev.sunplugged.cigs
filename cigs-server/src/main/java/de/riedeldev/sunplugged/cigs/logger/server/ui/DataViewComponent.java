@@ -85,10 +85,12 @@ public class DataViewComponent extends GridLayout {
 										.getFirstDataset();
 
 								set.addData(point.getDateTime(), getValueByField(point, (Field) chart.getData()));
+								TimeLineDataset dataset = (TimeLineDataset) config.data()
+										.getFirstDataset();
 							});
-							// for (ChartJs chart : component.charts) {
-							// chart.update();
-							// }
+							for (ChartJs chart : component.charts) {
+								chart.update();
+							}
 						});
 			}
 
@@ -133,8 +135,8 @@ public class DataViewComponent extends GridLayout {
 				.and()
 				.scales()
 				.add(Axis.X, new TimeScale().time()
-						.min(session.getStartDate())
-						.max(session.getEndDate())
+						// .min(session.getStartDate())
+						// .max(session.getEndDate())
 						.stepSize(timeStepSize)
 						.unit(timeStepUnit)
 						.displayFormats()
@@ -189,7 +191,7 @@ public class DataViewComponent extends GridLayout {
 		// chart.setSizeFull();
 		chart.setWidth("100%");
 		chart.setHeight("350px");
-		// chart.setJsLoggingEnabled(true);
+		chart.setJsLoggingEnabled(true);
 		addComponent(chart);
 		setComponentAlignment(chart, Alignment.TOP_CENTER);
 		chart.setData(field);
