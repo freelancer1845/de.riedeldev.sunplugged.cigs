@@ -14,10 +14,10 @@ public class TestService {
 	public DataPoint getDataPoint() {
 
 		DataPoint dataPoint = new DataPoint();
-		dataPoint.setSubstrateTempOne(Math.sin(i * Math.PI / 3600.0 * 2.0));
-		dataPoint.setSubstrateTempTwo(Math.sin(i * Math.PI / 3600.0 * 2.0));
-		dataPoint.setSubstrateTempThree(Math.sin(i * Math.PI / 3600.0 * 2.0));
-		dataPoint.setSubstrateTempFour(Math.sin(i * Math.PI / 3600.0 * 2.0));
+		dataPoint.setPressureBakingPa(Math.sin(i * Math.PI / 3600.0 * 2.0));
+		dataPoint.setPressureFullRangePa_1(Math.sin(i * Math.PI / 3600.0 * 2.0));
+		dataPoint.setPressureFullRangePa_2(Math.sin(i * Math.PI / 3600.0 * 2.0));
+		dataPoint.setMagnetron_1_I((int) Math.sin(i * Math.PI / 3600.0 * 2.0));
 
 		i++;
 

@@ -1,7 +1,11 @@
 package de.riedeldev.sunplugged.cigs.logger.server.service;
 
+import java.time.LocalDateTime;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +23,12 @@ public class DataAquisitionService {
 	@Value("${cigs.api}")
 	private String cigsApi;
 
+	private Long timeStepSize = 1000L;
+
+	private List<StateListener> listeners = new LinkedList<>();
+
+	private List<Consumer<DataPoint>> newDataPointListeners = new LinkedList<>();
+
 	private DataLoggingService loggingService;
 
 	private ExecutorService executor;
@@ -27,37 +37,52 @@ public class DataAquisitionService {
 
 	private LogSession currentSession;
 
+	private DataPoint lastDataPoint;
+
+	private boolean shouldLog = false;
+
+	private Object dataPointLock = new Object();
+
 	@Autowired
 	public DataAquisitionService(DataLoggingService loggingService) {
 		super();
 		this.loggingService = loggingService;
 		this.executor = Executors.newSingleThreadExecutor();
 		runnable = new LogRunnable();
+		executor.execute(runnable);
+	}
+
+	public void addStateListener(StateListener listener) {
+		listeners.add(listener);
+		listener.newState(runnable.isRunning(), runnable.isRunning() ? currentSession : null);
+	}
+
+	public void removeListener(StateListener listener) {
+		listeners.remove(listener);
 	}
 
 	public void startLogging() {
-		if (runnable.isRunning() == false) {
-			log.debug("Already logging. Starting new session!");
-			runnable.stop();
+		if (currentSession != null) {
+			log.debug("Already logging");
+			throw new IllegalStateException("Tried to start logging, but were already logging to a session.");
 		}
-
 		log.debug("Starting logging...");
 		prepareForNewSession();
-		executor.execute(runnable);
 	}
 
 	private void prepareForNewSession() {
 		currentSession = loggingService.createNewSession();
+		shouldLog = true;
+		fireNewStateEvent(true, currentSession);
 	}
 
 	public void stopLogging() {
-		runnable.stop();
+		shouldLog = false;
 	}
 
 	private void logDataPoint() {
-		RestTemplate template = new RestTemplate();
-		DataPoint point = template.getForObject(cigsApi, DataPoint.class);
-		currentSession = loggingService.addDataPoint(point, currentSession);
+
+		currentSession = loggingService.addDataPoint(lastDataPoint, currentSession);
 	}
 
 	private final class LogRunnable implements Runnable {
@@ -69,13 +94,25 @@ public class DataAquisitionService {
 			running = true;
 
 			try {
+				Thread.sleep(5000);
 				while (running) {
 					long lastTime = System.currentTimeMillis();
-					logDataPoint();
+
+					getNewDataPoint();
+
+					if (shouldLog) {
+						logDataPoint();
+					} else {
+						if (currentSession != null) {
+							fireNewStateEvent(false, null);
+							currentSession = null;
+						}
+					}
+
 					long currentTime = System.currentTimeMillis();
 					long div = currentTime - lastTime;
-					if (div < 1000) {
-						Thread.sleep(1000 - div);
+					if (div < timeStepSize) {
+						Thread.sleep(timeStepSize - div);
 					}
 
 				}
@@ -83,6 +120,7 @@ public class DataAquisitionService {
 				log.debug("Log Runnable interrupted!", e);
 			}
 			running = false;
+
 		}
 
 		public void stop() {
@@ -96,8 +134,43 @@ public class DataAquisitionService {
 
 	}
 
+	private void getNewDataPoint() {
+		RestTemplate template = new RestTemplate();
+		synchronized (dataPointLock) {
+			lastDataPoint = template.getForObject(cigsApi, DataPoint.class);
+			lastDataPoint.setDateTime(LocalDateTime.now());
+		}
+		newDataPointListeners.forEach(listener -> listener.accept(lastDataPoint));
+	}
+
 	public LogSession getActiveSession() {
 		return currentSession;
+	}
+
+	public interface StateListener {
+		public void newState(Boolean currentState, LogSession currentSession);
+	}
+
+	private void fireNewStateEvent(Boolean currentState, LogSession currentSession) {
+		listeners.forEach(listener -> listener.newState(currentState, currentSession));
+	}
+
+	public Boolean isLogging() {
+		return shouldLog;
+	}
+
+	public DataPoint getLastDataPoint() {
+		synchronized (dataPointLock) {
+			return lastDataPoint;
+		}
+	}
+
+	public void registerDataPointListener(Consumer<DataPoint> consumer) {
+		newDataPointListeners.add(consumer);
+	}
+
+	public void removeDataPointListener(Consumer<DataPoint> consumer) {
+		newDataPointListeners.remove(consumer);
 	}
 
 }

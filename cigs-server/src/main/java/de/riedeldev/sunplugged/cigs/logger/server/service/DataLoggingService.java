@@ -80,6 +80,7 @@ public class DataLoggingService {
 
 	public LogSession createNewSession() {
 		LogSession session = new LogSession();
+		session.setStartDate(LocalDateTime.now());
 		return sessionRepo.save(session);
 	}
 

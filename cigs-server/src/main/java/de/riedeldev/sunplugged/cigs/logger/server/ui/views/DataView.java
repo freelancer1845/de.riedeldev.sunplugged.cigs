@@ -1,12 +1,10 @@
-package de.riedeldev.sunplugged.cigs.logger.server.ui;
+package de.riedeldev.sunplugged.cigs.logger.server.ui.views;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
 
 import com.opencsv.exceptions.CsvDataTypeMismatchException;
 import com.opencsv.exceptions.CsvRequiredFieldEmptyException;
@@ -19,17 +17,15 @@ import com.vaadin.server.FileDownloader;
 import com.vaadin.server.Resource;
 import com.vaadin.server.StreamResource;
 import com.vaadin.server.StreamResource.StreamSource;
-import com.vaadin.shared.ui.ContentMode;
 import com.vaadin.spring.annotation.SpringView;
+import com.vaadin.spring.annotation.UIScope;
 import com.vaadin.ui.Button;
-import com.vaadin.ui.Component;
 import com.vaadin.ui.CssLayout;
 import com.vaadin.ui.DateField;
 import com.vaadin.ui.Grid;
 import com.vaadin.ui.Grid.SelectionMode;
 import com.vaadin.ui.GridLayout;
 import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.Label;
 import com.vaadin.ui.TabSheet;
 import com.vaadin.ui.TabSheet.Tab;
 import com.vaadin.ui.VerticalLayout;
@@ -38,100 +34,51 @@ import com.vaadin.ui.themes.ValoTheme;
 import de.riedeldev.sunplugged.cigs.logger.server.model.LogSession;
 import de.riedeldev.sunplugged.cigs.logger.server.service.DataCSVService;
 import de.riedeldev.sunplugged.cigs.logger.server.service.DataLoggingService;
-import de.riedeldev.sunplugged.cigs.logger.server.ui.tabs.LogConfigurationTab;
+import de.riedeldev.sunplugged.cigs.logger.server.ui.ConfirmationDialog;
+import de.riedeldev.sunplugged.cigs.logger.server.ui.DataViewComponent;
+import de.riedeldev.sunplugged.cigs.logger.server.ui.SessionEditor;
+import de.riedeldev.sunplugged.cigs.logger.server.ui.Views;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@SpringView(name = "cigs")
-public class CigsView extends VerticalLayout implements View {
+@SpringView(name = Views.DATA_VIEW)
+@UIScope
+public class DataView extends GridLayout implements View {
 
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 7756494991676578253L;
-	private Label header;
-	private TabSheet tabsheet;
-	private Tab dataTab;
+	private static final long serialVersionUID = -121026732458969523L;
 
 	private DataLoggingService logService;
-
+	private SessionEditor editor;
 	private DataCSVService csvService;
 
-	private final SessionEditor editor;
-
+	private DateField endDate;
 	private DateField startDate;
 
-	private DateField endDate;
-
 	private ListDataProvider<LogSession> dataProvider;
-	private VerticalLayout formLayout;
-	private Component dataComponent;
 
-	private LogConfigurationTab logConfigurationTab;
-	private HorizontalLayout logStateLayout;
-
-	@Autowired
-	public CigsView(DataLoggingService service, DataCSVService csvService, SessionEditor editor,
-			LogConfigurationTab logConfigurationTab) {
-		this.logService = service;
-		this.csvService = csvService;
+	public DataView(SessionEditor editor, DataLoggingService logService, DataCSVService csvService) {
+		super(2, 1);
 		this.editor = editor;
-		this.logConfigurationTab = logConfigurationTab;
-		editor.setVisible(false);
+		this.logService = logService;
+		this.csvService = csvService;
+
+		this.editor.setVisible(false);
+		createContent();
+
 	}
 
 	@Override
 	public void enter(ViewChangeEvent event) {
-
-		header = new Label("<h2>Cigs Data</h2>", ContentMode.HTML);
-
-		addComponent(header);
-
-		tabsheet = new TabSheet();
-		addComponent(tabsheet);
-
-		dataComponent = createDataComponent();
-		dataTab = tabsheet.addTab(dataComponent, "Data", VaadinIcons.DATABASE);
-		dataTab = tabsheet.addTab(logConfigurationTab, "Configuration", VaadinIcons.PENCIL);
-
-		createLogStateLayout();
-
-		View.super.enter(event);
+		dataProvider.refreshAll();
 	}
 
-	private void createLogStateLayout() {
-		Label horizontalSperator = new Label("<hr />", ContentMode.HTML);
-		// horizontalSperator.setSizeUndefined();
-		horizontalSperator.setWidth("100%");
-		addComponent(horizontalSperator);
-
-		logStateLayout = new HorizontalLayout();
-		logStateLayout.setWidth("100%");
-		addComponent(logStateLayout);
-
-		Label stateLabel = new Label();
-		stateLabel.setContentMode(ContentMode.HTML);
-		stateLabel.addStyleName(ValoTheme.LABEL_H2);
-		stateLabel.setValue(VaadinIcons.POWER_OFF.getHtml() + " Currently not logging");
-		stateLabel.setWidth("100%");
-		logStateLayout.addComponent(stateLabel);
-		logStateLayout.setExpandRatio(stateLabel, 1.0f);
-
-		Label currentSessionLabel = new Label();
-		currentSessionLabel.setValue("Current Session: Unkown");
-		currentSessionLabel.addStyleName(ValoTheme.LABEL_H2);
-		currentSessionLabel.addStyleName(ValoTheme.LABEL_LIGHT);
-		logStateLayout.addComponent(currentSessionLabel);
-		logStateLayout.setExpandRatio(currentSessionLabel, 0.0f);
-
-	}
-
-	private Component createDataComponent() {
-
-		GridLayout gridLayout = new GridLayout(2, 1);
-		gridLayout.setSizeFull();
-		gridLayout.setColumnExpandRatio(0, 2.0f);
-		gridLayout.setColumnExpandRatio(1, 1.0f);
+	private void createContent() {
+		this.setSizeFull();
+		this.setColumnExpandRatio(0, 2.0f);
+		this.setColumnExpandRatio(1, 1.0f);
 
 		VerticalLayout firstComponent = new VerticalLayout();
 
@@ -153,10 +100,10 @@ public class CigsView extends VerticalLayout implements View {
 		firstComponent.addComponent(grid);
 		firstComponent.setWidth("100%");
 
-		gridLayout.addComponent(firstComponent, 0, 0);
+		this.addComponent(firstComponent, 0, 0);
 
-		gridLayout.addComponent(editor, 1, 0);
-		return gridLayout;
+		this.addComponent(editor, 1, 0);
+
 	}
 
 	private void createDatePickerEnd() {
@@ -289,10 +236,14 @@ public class CigsView extends VerticalLayout implements View {
 		viewButton.setStyleName(ValoTheme.BUTTON_FRIENDLY);
 		viewButton.addClickListener(click -> {
 
-			Tab tab = tabsheet.addTab(new DataViewComponent(session, logService), session.getStartDate()
-					.format(DateTimeFormatter.ofPattern("yyyy-dd-MM HH:mm")));
-			tab.setClosable(true);
-			tabsheet.setSelectedTab(tab);
+			if (getParent() instanceof TabSheet) {
+				TabSheet tabsheet = (TabSheet) getParent();
+				Tab tab = tabsheet.addTab(new DataViewComponent(session, logService), session.getStartDate()
+						.format(DateTimeFormatter.ofPattern("yyyy-dd-MM HH:mm")));
+				tab.setClosable(true);
+				tabsheet.setSelectedTab(tab);
+			}
+
 		});
 		layout.addComponent(viewButton);
 		Button downloadButton = new Button("");
@@ -330,4 +281,5 @@ public class CigsView extends VerticalLayout implements View {
 				});
 		dataProvider.refreshAll();
 	}
+
 }

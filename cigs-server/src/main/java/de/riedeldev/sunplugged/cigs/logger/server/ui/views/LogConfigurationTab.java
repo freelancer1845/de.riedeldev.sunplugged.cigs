@@ -1,4 +1,4 @@
-package de.riedeldev.sunplugged.cigs.logger.server.ui.tabs;
+package de.riedeldev.sunplugged.cigs.logger.server.ui.views;
 
 import com.vaadin.data.Binder;
 import com.vaadin.data.ValidationResult;
