@@ -17,6 +17,7 @@ import com.vaadin.spring.annotation.UIScope;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.FormLayout;
+import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
 
@@ -33,6 +34,8 @@ public class LiveView extends VerticalLayout implements View, Consumer<DataPoint
 
 	private Binder<DataPoint> binder = new Binder<>(DataPoint.class);
 
+	private int layoutSortIndex = 0;
+
 	public LiveView(DataAquisitionService logService) {
 		this.aquiService = logService;
 		Button startButton = new Button();
@@ -45,22 +48,31 @@ public class LiveView extends VerticalLayout implements View, Consumer<DataPoint
 		stopButton.addClickListener(this::handleStopClick);
 		addComponent(stopButton);
 
-		FormLayout layout = new FormLayout();
+		HorizontalLayout formWrapper = new HorizontalLayout();
+		FormLayout layoutLeft = new FormLayout();
+		FormLayout layoutRight = new FormLayout();
 
+		formWrapper.addComponent(layoutLeft);
+		formWrapper.addComponent(layoutRight);
 		DataPoint.class.getFields();
 
 		ReflectionUtils.doWithFields(DataPoint.class, field -> {
 			TextField textField = new TextField(field.getAnnotation(LogSettings.class)
 					.nameToDisplay());
-
-			layout.addComponent(textField);
+			if (layoutSortIndex == 0) {
+				layoutLeft.addComponent(textField);
+				layoutSortIndex = 1;
+			} else {
+				layoutRight.addComponent(textField);
+				layoutSortIndex = 0;
+			}
 			binder.bind(textField, (point) -> {
 				return getValueByField(point, field);
 			}, null);
 		}, this::filterField);
 		binder.setReadOnly(true);
 
-		addComponent(layout);
+		addComponent(formWrapper);
 		aquiService.registerDataPointListener(this);
 	}
 
@@ -104,12 +116,22 @@ public class LiveView extends VerticalLayout implements View, Consumer<DataPoint
 
 		try {
 			if (field.getType() == Double.class) {
-				Double value = Double.valueOf(BeanUtils.getProperty(point, field.getName()));
+				String stringValue = BeanUtils.getProperty(point, field.getName());
+				if (stringValue == null) {
+					return "N/A";
+				}
+				Double value = Double.valueOf(stringValue);
 
 				return String.format("%.2f", value);
 			} else if (field.getType() == LocalDateTime.class) {
 				LocalDateTime value = LocalDateTime.parse(BeanUtils.getProperty(point, field.getName()));
 				return value.format(DateTimeFormatter.ofPattern("HH:mm:ss dd-MM-yyyy"));
+			} else if (field.getType() == Integer.class) {
+				String stringValue = BeanUtils.getProperty(point, field.getName());
+				if (stringValue == null) {
+					return "N/A";
+				}
+				return stringValue;
 			}
 			return BeanUtils.getProperty(point, field.getName());
 		} catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException
