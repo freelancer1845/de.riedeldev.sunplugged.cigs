@@ -77,7 +77,7 @@ public class DataView extends GridLayout implements View {
 
 	private void createContent() {
 		this.setSizeFull();
-		this.setColumnExpandRatio(0, 2.0f);
+		this.setColumnExpandRatio(0, 1.2f);
 		this.setColumnExpandRatio(1, 1.0f);
 
 		VerticalLayout firstComponent = new VerticalLayout();

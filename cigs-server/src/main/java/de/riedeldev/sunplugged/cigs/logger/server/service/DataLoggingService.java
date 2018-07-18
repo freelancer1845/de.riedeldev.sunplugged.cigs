@@ -97,4 +97,9 @@ public class DataLoggingService {
 		sessionRepo.delete(session);
 	}
 
+	@Transactional(readOnly = true)
+	public LogSession getLiveLogSession(LogSession session) {
+		return sessionRepo.findById(session.getId()).orElse(null);
+	}
+
 }

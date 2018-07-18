@@ -83,16 +83,18 @@ public class SessionDataChart extends VerticalLayout {
 			}
 		});
 		select.setItemCaptionGenerator(field -> field.name);
+		select.setWidth("100%");
+		select.setHeight("100%");
 		addComponent(select);
 	}
 
 	public void showSession(LogSession session) throws Exception {
-		if (session == null) {
-			this.session = null;
+		this.session = service.getLiveLogSession(session);
+		if (this.session == null) {
 			setVisible(false);
 		}
 		setVisible(true);
-		this.session = session;
+
 		dataPoints = service.getDatapointsOfSession(session);
 
 		updateChart();
@@ -135,14 +137,7 @@ public class SessionDataChart extends VerticalLayout {
 						DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
 				.and().tooltips().mode(InteractionMode.INDEX).intersect(false)
 				.and().hover().mode(InteractionMode.NEAREST).intersect(true)
-				.and().scales()
-				.add(Axis.X, new TimeScale().time()
-						.min(session.getStartDate()
-								.truncatedTo(ChronoUnit.HOURS))
-						.max(session.getEndDate().plusHours(1)
-								.truncatedTo(ChronoUnit.HOURS))
-						.stepSize(1).unit(TimeScaleOptions.Unit.HOUR)
-						.displayFormats().hour("DD.MM HH:mm:ss").and().and())
+				.and().scales().add(Axis.X, createTimeScaleForSession(session))
 				.add(Axis.Y,
 						new LinearScale().display(true).scaleLabel()
 								.display(true).labelString("Value").and()
@@ -184,10 +179,47 @@ public class SessionDataChart extends VerticalLayout {
 					/ Math.abs(values.get(idxOfPrevious).getSecond())) > 0.1) {
 				finalValues.add(values.get(i));
 				idxOfPrevious = i;
+			} else if (finalValues.get(finalValues.size() - 1).getFirst()
+					.plusMinutes(2).isBefore(values.get(i).getFirst())) {
+				finalValues.add(values.get(i));
+				idxOfPrevious = i;
 			}
 		}
 
 		return finalValues;
+
+	}
+
+	private TimeScale createTimeScaleForSession(LogSession session) {
+
+		if (session.getStartDate().plusHours(1)
+				.isBefore(session.getEndDate())) {
+
+			return new TimeScale().time()
+					.min(session.getStartDate().truncatedTo(ChronoUnit.HOURS))
+					.max(session.getEndDate().plusHours(1)
+							.truncatedTo(ChronoUnit.HOURS))
+					.stepSize(1).unit(TimeScaleOptions.Unit.HOUR)
+					.displayFormats().hour("DD.MM HH:mm").and().and();
+
+		} else if (session.getStartDate().plusMinutes(1)
+				.isBefore(session.getEndDate())) {
+
+			return new TimeScale().time()
+					.min(session.getStartDate().truncatedTo(ChronoUnit.MINUTES))
+					.max(session.getStartDate().plusMinutes(65)
+							.truncatedTo(ChronoUnit.MINUTES))
+					.stepSize(5).unit(TimeScaleOptions.Unit.MINUTE)
+					.displayFormats().hour("DD.MM HH:mm").and().and();
+
+		} else {
+			return new TimeScale().time()
+					.min(session.getStartDate().truncatedTo(ChronoUnit.SECONDS))
+					.max(session.getStartDate().plusSeconds(70)
+							.truncatedTo(ChronoUnit.SECONDS))
+					.stepSize(5).unit(TimeScaleOptions.Unit.SECOND)
+					.displayFormats().hour("DD.MM HH:mm:ss").and().and();
+		}
 
 	}
 

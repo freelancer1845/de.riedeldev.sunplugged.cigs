@@ -41,10 +41,10 @@ public class TestService {
 										field.getName());
 						if (field.getType() == Integer.class) {
 							desc.getWriteMethod().invoke(dataPoint,
-									(int) Math.sin(i * Math.PI / 3600.0 * 2.0));
+									(int) randomData());
 						} else if (field.getType() == Double.class) {
 							desc.getWriteMethod().invoke(dataPoint,
-									Math.sin(i * Math.PI / 3600.0 * 2.0));
+									randomData());
 						}
 
 					} catch (IllegalAccessException | InvocationTargetException
@@ -57,6 +57,11 @@ public class TestService {
 		i++;
 
 		return ResponseEntity.ok(dataPoint);
+	}
+
+	private double randomData() {
+		return Math.sin(i * Math.PI / 3600.0 * 2.0); // sinus data
+		// return new Random().nextDouble() * 5;
 	}
 
 }
