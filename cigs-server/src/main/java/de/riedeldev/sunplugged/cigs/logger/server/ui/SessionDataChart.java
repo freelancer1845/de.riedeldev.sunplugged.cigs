@@ -154,7 +154,6 @@ public class SessionDataChart extends VerticalLayout {
 		// chart.setSizeFull();
 		chart.setWidth("100%");
 		chart.setHeight("100%");
-		chart.setJsLoggingEnabled(true);
 		return chart;
 	}
 
