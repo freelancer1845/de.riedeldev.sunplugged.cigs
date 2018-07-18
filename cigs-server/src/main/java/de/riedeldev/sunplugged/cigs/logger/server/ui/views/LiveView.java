@@ -30,6 +30,11 @@ import de.riedeldev.sunplugged.cigs.logger.server.ui.Views;
 @UIScope
 public class LiveView extends VerticalLayout implements View, Consumer<DataPoint> {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -5954558455045193409L;
+
 	private final DataAquisitionService aquiService;
 
 	private Binder<DataPoint> binder = new Binder<>(DataPoint.class);
@@ -47,6 +52,14 @@ public class LiveView extends VerticalLayout implements View, Consumer<DataPoint
 		stopButton.setCaption("Stop Logging");
 		stopButton.addClickListener(this::handleStopClick);
 		addComponent(stopButton);
+
+		Button newPointButton = new Button();
+		newPointButton.setCaption("New Point");
+		newPointButton.addClickListener(event -> {
+			aquiService.testGetDataPoint();
+		});
+
+		addComponent(newPointButton);
 
 		HorizontalLayout formWrapper = new HorizontalLayout();
 		FormLayout layoutLeft = new FormLayout();

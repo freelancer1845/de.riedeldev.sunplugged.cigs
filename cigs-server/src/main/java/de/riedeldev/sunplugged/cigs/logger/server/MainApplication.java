@@ -2,6 +2,7 @@ package de.riedeldev.sunplugged.cigs.logger.server;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -10,6 +11,7 @@ import de.riedeldev.sunplugged.cigs.logger.server.service.DataLoggingService;
 
 @SpringBootApplication
 @EnableScheduling
+@EnableAutoConfiguration
 public class MainApplication {
 
 	public static void main(String[] args) {
@@ -38,4 +40,5 @@ public class MainApplication {
 		};
 
 	}
+
 }

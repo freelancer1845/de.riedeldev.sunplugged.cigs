@@ -1,0 +1,12 @@
+{"properties": [
+  {
+    "name": "cigs.api",
+    "type": "java.lang.String",
+    "description": "Host address of CIGS machine plus rest endpoint (192.168.1.80/data)"
+  },
+  {
+    "name": "cigs.runaquisition",
+    "type": "java.lang.String",
+    "description": "If true, the aquisition starts automatically"
+  }
+]}

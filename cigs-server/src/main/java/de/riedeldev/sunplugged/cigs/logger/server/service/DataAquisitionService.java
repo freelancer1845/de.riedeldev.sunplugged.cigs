@@ -1,16 +1,24 @@
 package de.riedeldev.sunplugged.cigs.logger.server.service;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
+import javax.annotation.PostConstruct;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+
+import com.fasterxml.jackson.databind.MapperFeature;
 
 import de.riedeldev.sunplugged.cigs.logger.server.model.DataPoint;
 import de.riedeldev.sunplugged.cigs.logger.server.model.LogSession;
@@ -22,6 +30,9 @@ public class DataAquisitionService {
 
 	@Value("${cigs.api}")
 	private String cigsApi;
+
+	@Value("${cigs.runaquisition}")
+	private boolean runAquisition = true;
 
 	private Long timeStepSize = 1000L;
 
@@ -49,7 +60,16 @@ public class DataAquisitionService {
 		this.loggingService = loggingService;
 		this.executor = Executors.newSingleThreadExecutor();
 		runnable = new LogRunnable();
-		executor.execute(runnable);
+
+	}
+
+	@PostConstruct
+	protected void postConstruct() {
+		if (runAquisition == true) {
+			executor.execute(runnable);
+		} else {
+			log.warn("Auqisition service is not running! (Setting: cigs.runaquisition=false");
+		}
 	}
 
 	public void addStateListener(StateListener listener) {
@@ -89,30 +109,57 @@ public class DataAquisitionService {
 
 		private boolean running = false;
 
+		private int consecutiveErrors = 0;
+		
+		private long deltaTime;
+
 		@Override
 		public void run() {
 			running = true;
 
 			try {
-				Thread.sleep(5000);
+				Thread.sleep(10000);
 				while (running) {
 					long lastTime = System.currentTimeMillis();
+					try {
 
-					getNewDataPoint();
+						getNewDataPoint();
 
-					if (shouldLog) {
-						logDataPoint();
-					} else {
-						if (currentSession != null) {
-							fireNewStateEvent(false, null);
-							currentSession = null;
+						if (shouldLog) {
+							logDataPoint();
+						} else {
+							if (currentSession != null) {
+								fireNewStateEvent(false, null);
+								currentSession = null;
+							}
 						}
+					} catch (Exception e) {
+						if (e instanceof InterruptedException) {
+							throw e;
+						}
+
+						log.debug("Error in data aquisition.", e);
+						consecutiveErrors++;
+						log.debug(String.format("This error is the %d consecutive error.", consecutiveErrors));
+
+						if (consecutiveErrors > 20) {
+							log.warn("More than 20 consecutive errors. Setting update interval to 5 min");
+							deltaTime = 60000 * 5;
+						}
+						if (consecutiveErrors > 10) {
+							log.warn(
+									"To many consecutive errors. Throtteling service to 60s. Current session will not be stopped by this.");
+							deltaTime = 60000L;
+						}
+						
 					}
 
+					consecutiveErrors = 0;
+					deltaTime = timeStepSize;
 					long currentTime = System.currentTimeMillis();
 					long div = currentTime - lastTime;
-					if (div < timeStepSize) {
-						Thread.sleep(timeStepSize - div);
+					if (div < deltaTime) {
+						Thread.sleep(deltaTime - div);
 					}
 
 				}
@@ -134,8 +181,21 @@ public class DataAquisitionService {
 
 	}
 
+	public void testGetDataPoint() {
+		getNewDataPoint();
+		if (shouldLog) {
+			logDataPoint();
+		}
+	}
+
 	private void getNewDataPoint() {
 		RestTemplate template = new RestTemplate();
+		MappingJackson2HttpMessageConverter convert = new MappingJackson2HttpMessageConverter(
+				Jackson2ObjectMapperBuilder.json().featuresToEnable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
+						.build());
+		convert.setSupportedMediaTypes(Collections.singletonList((MediaType.parseMediaType("text/json"))));
+
+		template.setMessageConverters(Collections.singletonList((convert)));
 		synchronized (dataPointLock) {
 			lastDataPoint = template.getForObject(cigsApi, DataPoint.class);
 			lastDataPoint.setDateTime(LocalDateTime.now());

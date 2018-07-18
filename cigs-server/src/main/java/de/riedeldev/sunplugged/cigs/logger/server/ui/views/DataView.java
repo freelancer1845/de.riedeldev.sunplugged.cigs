@@ -59,7 +59,8 @@ public class DataView extends GridLayout implements View {
 
 	private ListDataProvider<LogSession> dataProvider;
 
-	public DataView(SessionEditor editor, DataLoggingService logService, DataCSVService csvService) {
+	public DataView(SessionEditor editor, DataLoggingService logService,
+			DataCSVService csvService) {
 		super(2, 1);
 		this.editor = editor;
 		this.logService = logService;
@@ -148,20 +149,19 @@ public class DataView extends GridLayout implements View {
 
 				.setCaption("End Time");
 
-		// grid.addColumn(session -> logService.getCountOfDataPointsBySession(session))
+		// grid.addColumn(session ->
+		// logService.getCountOfDataPointsBySession(session))
 		// .setCaption("Data Points");
 
 		grid.addComponentColumn(this::createActionsForSession)
 				.setCaption("Actions");
 
-		dataProvider = new ListDataProvider<>(logService.streamSessionsFromLast()
-				.collect(Collectors.toList()));
+		dataProvider = new ListDataProvider<>(logService
+				.streamSessionsFromLast().collect(Collectors.toList()));
 		dataProvider.addFilter(session -> {
 			if (endDate.isEmpty() == false) {
-				return session.getEndDate()
-						.toLocalDate()
-						.isBefore(endDate.getValue()
-								.plusDays(1));
+				return session.getEndDate().toLocalDate()
+						.isBefore(endDate.getValue().plusDays(1));
 			} else {
 				return true;
 			}
@@ -169,10 +169,8 @@ public class DataView extends GridLayout implements View {
 		});
 		dataProvider.addFilter(session -> {
 			if (startDate.isEmpty() == false) {
-				return session.getStartDate()
-						.toLocalDate()
-						.isAfter(startDate.getValue()
-								.minusDays(1));
+				return session.getStartDate().toLocalDate()
+						.isAfter(startDate.getValue().minusDays(1));
 			} else {
 				return true;
 			}
@@ -192,12 +190,12 @@ public class DataView extends GridLayout implements View {
 	}
 
 	private void changeSelectedSession(SelectionEvent<LogSession> event) {
-		editor.editSession(event.getFirstSelectedItem()
-				.orElse(null));
+		editor.editSession(event.getFirstSelectedItem().orElse(null));
 	}
 
 	private FileDownloader getSessionDownloader(LogSession session) {
-		FileDownloader downloader = new FileDownloader(createSessionDownloadResource(session));
+		FileDownloader downloader = new FileDownloader(
+				createSessionDownloadResource(session));
 		return downloader;
 	}
 
@@ -213,13 +211,8 @@ public class DataView extends GridLayout implements View {
 			public InputStream getStream() {
 
 				String csvString;
-				try {
-					csvString = csvService.sessionToCsv(session);
-					return new ByteArrayInputStream(csvString.getBytes());
-				} catch (CsvDataTypeMismatchException | CsvRequiredFieldEmptyException e) {
-					log.error("Failed to convert session to csv!", e);
-					return new ByteArrayInputStream("Error creating csv...".getBytes());
-				}
+				csvString = csvService.sessionToCsv(session);
+				return new ByteArrayInputStream(csvString.getBytes());
 
 			}
 
@@ -238,8 +231,10 @@ public class DataView extends GridLayout implements View {
 
 			if (getParent() instanceof TabSheet) {
 				TabSheet tabsheet = (TabSheet) getParent();
-				Tab tab = tabsheet.addTab(new DataViewComponent(session, logService), session.getStartDate()
-						.format(DateTimeFormatter.ofPattern("yyyy-dd-MM HH:mm")));
+				Tab tab = tabsheet.addTab(
+						new DataViewComponent(session, logService),
+						session.getStartDate().format(DateTimeFormatter
+								.ofPattern("yyyy-dd-MM HH:mm")));
 				tab.setClosable(true);
 				tabsheet.setSelectedTab(tab);
 			}
@@ -257,8 +252,8 @@ public class DataView extends GridLayout implements View {
 		deleteButton.setIcon(VaadinIcons.TRASH);
 		deleteButton.setStyleName(ValoTheme.BUTTON_DANGER);
 		deleteButton.addClickListener(click -> {
-			ConfirmationDialog.confirmAndDo(getUI(), "Delete Session", "Are you sure you want to delete this session?",
-					answer -> {
+			ConfirmationDialog.confirmAndDo(getUI(), "Delete Session",
+					"Are you sure you want to delete this session?", answer -> {
 						if (answer) {
 							deleteSession(session);
 						}
@@ -271,14 +266,12 @@ public class DataView extends GridLayout implements View {
 
 	private void deleteSession(LogSession session) {
 		logService.deleteLogSession(session);
-		dataProvider.getItems()
-				.remove(session);
-		editor.getCurrentSession()
-				.ifPresent(activeSession -> {
-					if (activeSession.equals(session)) {
-						editor.setVisible(false);
-					}
-				});
+		dataProvider.getItems().remove(session);
+		editor.getCurrentSession().ifPresent(activeSession -> {
+			if (activeSession.equals(session)) {
+				editor.setVisible(false);
+			}
+		});
 		dataProvider.refreshAll();
 	}
 

@@ -34,10 +34,11 @@ public class DataPoint {
 	private Double pressureBakingPa;
 
 	@LogSettings(createChart = true, csvPosition = 3, nameToDisplay = "P Full Range 1 (Pa)")
-	private Double pressureFullRangePa_1;
+
+	private Double pressureFullRangeuPa_1;
 
 	@LogSettings(createChart = true, csvPosition = 4, nameToDisplay = "P Full Range 2 (Pa)")
-	private Double pressureFullRangePa_2;
+	private Double pressureFullRangeuPa_2;
 
 	@LogSettings(createChart = true, csvPosition = 5, nameToDisplay = "I Magnetron 1 (A)")
 	private Integer magnetron_1_I;
@@ -146,17 +147,29 @@ public class DataPoint {
 
 	@LogSettings(createChart = true, csvPosition = 41, nameToDisplay = "Cell Temperature 4")
 	private Double temperatureCell_4;
+	
+	@LogSettings(createChart = true, csvPosition = 42, nameToDisplay = "Manifold Temperature 1")
+	private Double temperatureManifold_1;
+	
+	@LogSettings(createChart = true, csvPosition = 43, nameToDisplay = "Manifold Temperature 2")
+	private Double temperatureManifold_2;
+	
+	@LogSettings(createChart = true, csvPosition = 44, nameToDisplay = "Manifold Temperature 3")
+	private Double temperatureManifold_3;
+	
+	@LogSettings(createChart = true, csvPosition = 45, nameToDisplay = "Manifold Temperature 4")
+	private Double temperatureManifold_4;
 
-	@LogSettings(createChart = true, csvPosition = 42, nameToDisplay = "Cell Temperature NaF")
+	@LogSettings(createChart = true, csvPosition = 46, nameToDisplay = "Cell Temperature NaF")
 	private Double temperatureCell_NaF;
 
-	@LogSettings(createChart = true, csvPosition = 43, nameToDisplay = "Turbo Pump Rpm")
+	@LogSettings(createChart = true, csvPosition = 47, nameToDisplay = "Turbo Pump Rpm")
 	private Integer turboRpm;
 
-	@LogSettings(createChart = true, csvPosition = 44, nameToDisplay = "Substrate Rotation Speed Rpm")
+	@LogSettings(createChart = true, csvPosition = 48, nameToDisplay = "Substrate Rotation Speed Rpm")
 	private Double substrateRotationSpeedRpm;
 
-	@LogSettings(createChart = true, csvPosition = 45, nameToDisplay = "Substrate Lenght (mm)")
+	@LogSettings(createChart = true, csvPosition = 49, nameToDisplay = "Substrate Lenght (mm)")
 	private Double substrateLengthMM;
 
 }
