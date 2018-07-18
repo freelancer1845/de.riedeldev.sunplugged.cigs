@@ -81,6 +81,7 @@ public class DataLoggingService {
 	public LogSession createNewSession() {
 		LogSession session = new LogSession();
 		session.setStartDate(LocalDateTime.now());
+		session.setEndDate(LocalDateTime.now().plusSeconds(1));
 		return sessionRepo.save(session);
 	}
 

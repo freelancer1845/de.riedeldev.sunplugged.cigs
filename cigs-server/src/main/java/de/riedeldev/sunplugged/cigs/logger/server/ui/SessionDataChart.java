@@ -142,7 +142,14 @@ public class SessionDataChart extends VerticalLayout {
 						new LinearScale().display(true).scaleLabel()
 								.display(true).labelString("Value").and()
 								.ticks().and().position(Position.RIGHT))
-				.and().maintainAspectRatio(false).responsive(true).done();
+				.and().maintainAspectRatio(false).responsive(true)
+				// .pan()
+				// .enabled(true).speed(10).threshold(1).rangeMax()
+				// .x(session.getEndDate().plusHours(1)
+				// .toEpochSecond(ZoneOffset.UTC))
+				// .and().and().zoom().enabled(true).mode(XYMode.Y).sensitivity(3)
+				// .and()
+				.done();
 		ChartJs chart = new ChartJs(config);
 		// chart.setSizeFull();
 		chart.setWidth("100%");
@@ -177,12 +184,24 @@ public class SessionDataChart extends VerticalLayout {
 					.abs(values.get(idxOfPrevious).getSecond()
 							- values.get(i).getSecond())
 					/ Math.abs(values.get(idxOfPrevious).getSecond())) > 0.1) {
+				if (i - 1 > idxOfPrevious) {
+					if (Math.abs((values.get(i - 1).getSecond()
+							- values.get(i).getSecond()))
+							/ Math.abs(values.get(i).getSecond()) > 0.1) {
+						finalValues.add(values.get(i - 1));
+					}
+
+				}
 				finalValues.add(values.get(i));
 				idxOfPrevious = i;
 			} else if (finalValues.get(finalValues.size() - 1).getFirst()
 					.plusMinutes(2).isBefore(values.get(i).getFirst())) {
 				finalValues.add(values.get(i));
 				idxOfPrevious = i;
+			} else {
+				if (i == values.size() - 1) {
+					finalValues.add(values.get(i));
+				}
 			}
 		}
 
@@ -196,18 +215,18 @@ public class SessionDataChart extends VerticalLayout {
 				.isBefore(session.getEndDate())) {
 
 			return new TimeScale().time()
-					.min(session.getStartDate().truncatedTo(ChronoUnit.HOURS))
-					.max(session.getEndDate().plusHours(1)
-							.truncatedTo(ChronoUnit.HOURS))
-					.stepSize(1).unit(TimeScaleOptions.Unit.HOUR)
-					.displayFormats().hour("DD.MM HH:mm").and().and();
+					.min(session.getStartDate().minusMinutes(5))
+					.max(session.getEndDate().truncatedTo(ChronoUnit.HOURS)
+							.plusMinutes(20))
+					.stepSize(30).unit(TimeScaleOptions.Unit.MINUTE)
+					.displayFormats().minute("DD.MM HH:mm").and().and();
 
 		} else if (session.getStartDate().plusMinutes(1)
 				.isBefore(session.getEndDate())) {
 
 			return new TimeScale().time()
 					.min(session.getStartDate().truncatedTo(ChronoUnit.MINUTES))
-					.max(session.getStartDate().plusMinutes(65)
+					.max(session.getEndDate().plusMinutes(2)
 							.truncatedTo(ChronoUnit.MINUTES))
 					.stepSize(5).unit(TimeScaleOptions.Unit.MINUTE)
 					.displayFormats().hour("DD.MM HH:mm").and().and();
@@ -215,7 +234,7 @@ public class SessionDataChart extends VerticalLayout {
 		} else {
 			return new TimeScale().time()
 					.min(session.getStartDate().truncatedTo(ChronoUnit.SECONDS))
-					.max(session.getStartDate().plusSeconds(70)
+					.max(session.getEndDate().plusSeconds(10)
 							.truncatedTo(ChronoUnit.SECONDS))
 					.stepSize(5).unit(TimeScaleOptions.Unit.SECOND)
 					.displayFormats().hour("DD.MM HH:mm:ss").and().and();

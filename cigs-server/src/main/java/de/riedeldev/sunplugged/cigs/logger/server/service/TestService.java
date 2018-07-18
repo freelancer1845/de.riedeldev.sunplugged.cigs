@@ -55,12 +55,22 @@ public class TestService {
 				});
 
 		i++;
+		// if (i > 20) {
+		// i = 1;
+		// }
 
 		return ResponseEntity.ok(dataPoint);
 	}
 
 	private double randomData() {
-		return Math.sin(i * Math.PI / 3600.0 * 2.0); // sinus data
+		// if (i < 10) {
+		// return 0.;
+		// } else if (i < 20) {
+		// return 1.;
+		// } else {
+		// return 0.;
+		// }
+		return Math.sin(i * Math.PI / 120.0 * 2.0); // sinus data
 		// return new Random().nextDouble() * 5;
 	}
 
