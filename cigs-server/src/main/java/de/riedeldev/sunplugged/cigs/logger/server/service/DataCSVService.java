@@ -1,14 +1,11 @@
 package de.riedeldev.sunplugged.cigs.logger.server.service;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
 
 import org.apache.commons.beanutils.PropertyUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,8 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import de.riedeldev.sunplugged.cigs.logger.server.model.DataPoint;
+import de.riedeldev.sunplugged.cigs.logger.server.model.DataPointUtils.DataPointField;
 import de.riedeldev.sunplugged.cigs.logger.server.model.LogSession;
-import de.riedeldev.sunplugged.cigs.logger.server.model.LogSettings;
 import de.riedeldev.sunplugged.cigs.logger.server.repository.DataPointRepository;
 
 @Service
@@ -118,43 +115,6 @@ public class DataCSVService {
 		}
 
 		return value;
-	}
-
-	private static final class DataPointField {
-
-		final int csvPosition;
-		final String name;
-		final Field field;
-
-		public DataPointField(Field field) {
-			LogSettings annotation = field
-					.getDeclaredAnnotation(LogSettings.class);
-			if (annotation == null) {
-				throw new IllegalArgumentException(
-						"Field must be annotated by LogSettings");
-			}
-			this.csvPosition = annotation.csvPosition();
-			this.name = annotation.nameToDisplay();
-			this.field = field;
-
-		}
-
-		private static List<DataPointField> fields = null;
-
-		private static List<DataPointField> getAllDataPointFieldsSorted() {
-			if (fields == null) {
-				fields = Arrays.stream(DataPoint.class.getDeclaredFields())
-						.filter(field -> field
-								.getAnnotation(LogSettings.class) != null)
-						.map(field -> new DataPointField(field))
-						.collect(Collectors.toList());
-
-				fields.sort((field1, field2) -> Integer
-						.compare(field1.csvPosition, field2.csvPosition));
-			}
-			return fields;
-		}
-
 	}
 
 }

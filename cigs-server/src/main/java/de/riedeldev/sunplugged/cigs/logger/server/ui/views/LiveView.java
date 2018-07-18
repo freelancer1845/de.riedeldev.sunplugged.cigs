@@ -16,19 +16,28 @@ import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.spring.annotation.UIScope;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
+import com.vaadin.ui.CssLayout;
 import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.Notification;
+import com.vaadin.ui.Notification.Type;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
+import com.vaadin.ui.themes.ValoTheme;
 
 import de.riedeldev.sunplugged.cigs.logger.server.model.DataPoint;
 import de.riedeldev.sunplugged.cigs.logger.server.model.LogSettings;
 import de.riedeldev.sunplugged.cigs.logger.server.service.DataAquisitionService;
 import de.riedeldev.sunplugged.cigs.logger.server.ui.Views;
+import lombok.extern.slf4j.Slf4j;
 
 @SpringView(name = Views.LIVE_VIEW)
 @UIScope
-public class LiveView extends VerticalLayout implements View, Consumer<DataPoint> {
+@Slf4j
+public class LiveView extends VerticalLayout
+		implements
+			View,
+			Consumer<DataPoint> {
 
 	/**
 	 * 
@@ -43,23 +52,22 @@ public class LiveView extends VerticalLayout implements View, Consumer<DataPoint
 
 	public LiveView(DataAquisitionService logService) {
 		this.aquiService = logService;
+
+		CssLayout startStopLayout = new CssLayout();
+		startStopLayout.setPrimaryStyleName(ValoTheme.LAYOUT_COMPONENT_GROUP);
 		Button startButton = new Button();
 		startButton.setCaption("Start Logging");
 		startButton.addClickListener(this::handleStartClick);
-		addComponent(startButton);
+		startButton.setStyleName(ValoTheme.BUTTON_FRIENDLY);
+		startStopLayout.addComponent(startButton);
 
 		Button stopButton = new Button();
 		stopButton.setCaption("Stop Logging");
 		stopButton.addClickListener(this::handleStopClick);
-		addComponent(stopButton);
+		stopButton.setStyleName(ValoTheme.BUTTON_DANGER);
+		startStopLayout.addComponent(stopButton);
 
-		Button newPointButton = new Button();
-		newPointButton.setCaption("New Point");
-		newPointButton.addClickListener(event -> {
-			aquiService.testGetDataPoint();
-		});
-
-		addComponent(newPointButton);
+		addComponent(startStopLayout);
 
 		HorizontalLayout formWrapper = new HorizontalLayout();
 		FormLayout layoutLeft = new FormLayout();
@@ -70,8 +78,8 @@ public class LiveView extends VerticalLayout implements View, Consumer<DataPoint
 		DataPoint.class.getFields();
 
 		ReflectionUtils.doWithFields(DataPoint.class, field -> {
-			TextField textField = new TextField(field.getAnnotation(LogSettings.class)
-					.nameToDisplay());
+			TextField textField = new TextField(
+					field.getAnnotation(LogSettings.class).nameToDisplay());
 			if (layoutSortIndex == 0) {
 				layoutLeft.addComponent(textField);
 				layoutSortIndex = 1;
@@ -90,7 +98,18 @@ public class LiveView extends VerticalLayout implements View, Consumer<DataPoint
 	}
 
 	private void handleStartClick(ClickEvent event) {
-		aquiService.startLogging();
+		try {
+			aquiService.startLogging();
+		} catch (IllegalStateException e) {
+			// already logging
+			log.debug(
+					"Tried to start logging even though it was already logging");
+			Notification message = new Notification("Start faield",
+					"Tried to start logging, but was already logging.",
+					Type.ERROR_MESSAGE);
+			message.show(getUI().getPage());
+		}
+
 	}
 
 	private void handleStopClick(ClickEvent event) {
@@ -129,7 +148,8 @@ public class LiveView extends VerticalLayout implements View, Consumer<DataPoint
 
 		try {
 			if (field.getType() == Double.class) {
-				String stringValue = BeanUtils.getProperty(point, field.getName());
+				String stringValue = BeanUtils.getProperty(point,
+						field.getName());
 				if (stringValue == null) {
 					return "N/A";
 				}
@@ -137,18 +157,21 @@ public class LiveView extends VerticalLayout implements View, Consumer<DataPoint
 
 				return String.format("%.2f", value);
 			} else if (field.getType() == LocalDateTime.class) {
-				LocalDateTime value = LocalDateTime.parse(BeanUtils.getProperty(point, field.getName()));
-				return value.format(DateTimeFormatter.ofPattern("HH:mm:ss dd-MM-yyyy"));
+				LocalDateTime value = LocalDateTime
+						.parse(BeanUtils.getProperty(point, field.getName()));
+				return value.format(
+						DateTimeFormatter.ofPattern("HH:mm:ss dd-MM-yyyy"));
 			} else if (field.getType() == Integer.class) {
-				String stringValue = BeanUtils.getProperty(point, field.getName());
+				String stringValue = BeanUtils.getProperty(point,
+						field.getName());
 				if (stringValue == null) {
 					return "N/A";
 				}
 				return stringValue;
 			}
 			return BeanUtils.getProperty(point, field.getName());
-		} catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException
-				| NoSuchMethodException e) {
+		} catch (IllegalArgumentException | IllegalAccessException
+				| InvocationTargetException | NoSuchMethodException e) {
 
 			return "";
 		}

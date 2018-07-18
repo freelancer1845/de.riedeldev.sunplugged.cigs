@@ -6,11 +6,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.transaction.Transactional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import de.riedeldev.sunplugged.cigs.logger.server.model.DataPoint;
 import de.riedeldev.sunplugged.cigs.logger.server.model.LogSession;
@@ -32,7 +31,8 @@ public class DataLoggingService {
 	private List<LiveListener> liveListeners = new LinkedList<>();
 
 	@Autowired
-	public DataLoggingService(LogSessionRepository sessionRepo, DataPointRepository dataRepo) {
+	public DataLoggingService(LogSessionRepository sessionRepo,
+			DataPointRepository dataRepo) {
 		this.sessionRepo = sessionRepo;
 		this.dataRepo = dataRepo;
 	}
@@ -50,8 +50,8 @@ public class DataLoggingService {
 			point.setDateTime(LocalDateTime.now());
 		}
 		LogSession session = sessionRepo.findById(logSession.getId())
-				.orElseThrow(() -> new IllegalArgumentException(
-						String.format("No Session with id %d exists.", logSession.getId())));
+				.orElseThrow(() -> new IllegalArgumentException(String.format(
+						"No Session with id %d exists.", logSession.getId())));
 		if (session.getStartDate() == null) {
 			session.setStartDate(point.getDateTime());
 		}
@@ -64,7 +64,7 @@ public class DataLoggingService {
 		return sessionRepo.save(session);
 	}
 
-	@Transactional
+	@Transactional(readOnly = true)
 	public List<DataPoint> getDatapointsOfSession(LogSession session) {
 		return dataRepo.findAllBySession(session);
 	}

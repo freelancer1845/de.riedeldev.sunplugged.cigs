@@ -6,8 +6,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
 
-import com.opencsv.exceptions.CsvDataTypeMismatchException;
-import com.opencsv.exceptions.CsvRequiredFieldEmptyException;
 import com.vaadin.data.provider.ListDataProvider;
 import com.vaadin.event.selection.SelectionEvent;
 import com.vaadin.icons.VaadinIcons;
@@ -26,8 +24,8 @@ import com.vaadin.ui.Grid;
 import com.vaadin.ui.Grid.SelectionMode;
 import com.vaadin.ui.GridLayout;
 import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.TabSheet;
-import com.vaadin.ui.TabSheet.Tab;
+import com.vaadin.ui.Notification;
+import com.vaadin.ui.Notification.Type;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
 
@@ -35,7 +33,7 @@ import de.riedeldev.sunplugged.cigs.logger.server.model.LogSession;
 import de.riedeldev.sunplugged.cigs.logger.server.service.DataCSVService;
 import de.riedeldev.sunplugged.cigs.logger.server.service.DataLoggingService;
 import de.riedeldev.sunplugged.cigs.logger.server.ui.ConfirmationDialog;
-import de.riedeldev.sunplugged.cigs.logger.server.ui.DataViewComponent;
+import de.riedeldev.sunplugged.cigs.logger.server.ui.SessionDataChart;
 import de.riedeldev.sunplugged.cigs.logger.server.ui.SessionEditor;
 import de.riedeldev.sunplugged.cigs.logger.server.ui.Views;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +50,7 @@ public class DataView extends GridLayout implements View {
 
 	private DataLoggingService logService;
 	private SessionEditor editor;
+	private SessionDataChart chartComponent;
 	private DataCSVService csvService;
 
 	private DateField endDate;
@@ -60,12 +59,12 @@ public class DataView extends GridLayout implements View {
 	private ListDataProvider<LogSession> dataProvider;
 
 	public DataView(SessionEditor editor, DataLoggingService logService,
-			DataCSVService csvService) {
+			DataCSVService csvService, SessionDataChart chartComponent) {
 		super(2, 1);
 		this.editor = editor;
 		this.logService = logService;
 		this.csvService = csvService;
-
+		this.chartComponent = chartComponent;
 		this.editor.setVisible(false);
 		createContent();
 
@@ -103,7 +102,8 @@ public class DataView extends GridLayout implements View {
 
 		this.addComponent(firstComponent, 0, 0);
 
-		this.addComponent(editor, 1, 0);
+		// this.addComponent(editor, 1, 0);
+		// this.addComponent(chartComponent, 1, 1);
 
 	}
 
@@ -191,6 +191,9 @@ public class DataView extends GridLayout implements View {
 
 	private void changeSelectedSession(SelectionEvent<LogSession> event) {
 		editor.editSession(event.getFirstSelectedItem().orElse(null));
+		removeComponent(chartComponent);
+		removeComponent(editor);
+		addComponent(editor, 1, 0);
 	}
 
 	private FileDownloader getSessionDownloader(LogSession session) {
@@ -228,17 +231,16 @@ public class DataView extends GridLayout implements View {
 		viewButton.setIcon(VaadinIcons.CHART);
 		viewButton.setStyleName(ValoTheme.BUTTON_FRIENDLY);
 		viewButton.addClickListener(click -> {
-
-			if (getParent() instanceof TabSheet) {
-				TabSheet tabsheet = (TabSheet) getParent();
-				Tab tab = tabsheet.addTab(
-						new DataViewComponent(session, logService),
-						session.getStartDate().format(DateTimeFormatter
-								.ofPattern("yyyy-dd-MM HH:mm")));
-				tab.setClosable(true);
-				tabsheet.setSelectedTab(tab);
+			try {
+				chartComponent.showSession(session);
+			} catch (Exception e) {
+				Notification error = new Notification("Error creating chart",
+						e.getMessage(), Type.ERROR_MESSAGE);
+				error.show(getUI().getPage());
 			}
-
+			removeComponent(editor);
+			removeComponent(chartComponent);
+			addComponent(chartComponent, 1, 0);
 		});
 		layout.addComponent(viewButton);
 		Button downloadButton = new Button("");

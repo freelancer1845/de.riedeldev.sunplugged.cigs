@@ -7,6 +7,7 @@ import com.vaadin.icons.VaadinIcons;
 import com.vaadin.navigator.PushStateNavigation;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.shared.ui.ContentMode;
+import com.vaadin.shared.ui.MarginInfo;
 import com.vaadin.spring.annotation.SpringUI;
 import com.vaadin.spring.annotation.SpringViewDisplay;
 import com.vaadin.spring.navigator.SpringNavigator;
@@ -50,22 +51,30 @@ public class MainPage extends UI {
 
 		headerLayout = new VerticalLayout();
 		mainLayout.addComponent(headerLayout);
+
 		mainLayout.addComponent(Utils.createHorizontalSeperator());
 
 		header = new Label("<h2>Cigs Data</h2>", ContentMode.HTML);
 		headerLayout.addComponent(header);
+
 		mainMenu = new MenuBar();
 		mainMenu.addStyleName(ValoTheme.MENUBAR_BORDERLESS);
+
 		headerLayout.addComponent(mainMenu);
 
 		mainMenu.addItem("Live", VaadinIcons.LINE_CHART, item -> {
 			navigator.navigateTo(Views.LIVE_VIEW);
 		});
 
-		mainMenu.addItem("Data", VaadinIcons.DATABASE, item -> navigator.navigateTo(Views.DATA_VIEW));
+		mainMenu.addItem("Data", VaadinIcons.DATABASE,
+				item -> navigator.navigateTo(Views.DATA_VIEW));
 
 		contentLayout = new VerticalLayout();
 		contentLayout.setMargin(false);
+
+		mainLayout.addComponent(logStateComponent);
+		logStateComponent.setMargin(new MarginInfo(false, true, false, true));
+		mainLayout.addComponent(Utils.createHorizontalSeperator());
 		mainLayout.addComponent(contentLayout);
 
 		mainLayout.addComponent(Utils.createHorizontalSeperator());
@@ -73,7 +82,7 @@ public class MainPage extends UI {
 		footerLayout = new VerticalLayout();
 		mainLayout.addComponent(footerLayout);
 
-		footerLayout.addComponent(logStateComponent);
+		// footerLayout.addComponent(logStateComponent);
 		setContent(mainLayout);
 		navigator.init(this, contentLayout);
 

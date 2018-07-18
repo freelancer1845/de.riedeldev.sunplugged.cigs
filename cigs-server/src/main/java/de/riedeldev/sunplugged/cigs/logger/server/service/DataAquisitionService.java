@@ -1,7 +1,6 @@
 package de.riedeldev.sunplugged.cigs.logger.server.service;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -12,13 +11,8 @@ import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
-import com.fasterxml.jackson.databind.MapperFeature;
 
 import de.riedeldev.sunplugged.cigs.logger.server.model.DataPoint;
 import de.riedeldev.sunplugged.cigs.logger.server.model.LogSession;
@@ -68,13 +62,15 @@ public class DataAquisitionService {
 		if (runAquisition == true) {
 			executor.execute(runnable);
 		} else {
-			log.warn("Auqisition service is not running! (Setting: cigs.runaquisition=false");
+			log.warn(
+					"Auqisition service is not running! (Setting: cigs.runaquisition=false");
 		}
 	}
 
 	public void addStateListener(StateListener listener) {
 		listeners.add(listener);
-		listener.newState(runnable.isRunning(), runnable.isRunning() ? currentSession : null);
+		listener.newState(runnable.isRunning(),
+				runnable.isRunning() ? currentSession : null);
 	}
 
 	public void removeListener(StateListener listener) {
@@ -84,7 +80,8 @@ public class DataAquisitionService {
 	public void startLogging() {
 		if (currentSession != null) {
 			log.debug("Already logging");
-			throw new IllegalStateException("Tried to start logging, but were already logging to a session.");
+			throw new IllegalStateException(
+					"Tried to start logging, but were already logging to a session.");
 		}
 		log.debug("Starting logging...");
 		prepareForNewSession();
@@ -101,8 +98,8 @@ public class DataAquisitionService {
 	}
 
 	private void logDataPoint() {
-
-		currentSession = loggingService.addDataPoint(lastDataPoint, currentSession);
+		currentSession = loggingService.addDataPoint(lastDataPoint,
+				currentSession);
 	}
 
 	private final class LogRunnable implements Runnable {
@@ -110,7 +107,7 @@ public class DataAquisitionService {
 		private boolean running = false;
 
 		private int consecutiveErrors = 0;
-		
+
 		private long deltaTime;
 
 		@Override
@@ -126,13 +123,21 @@ public class DataAquisitionService {
 						getNewDataPoint();
 
 						if (shouldLog) {
-							logDataPoint();
+							try {
+								logDataPoint();
+							} catch (IllegalArgumentException e) {
+								// Log session doesnt exist
+								stopLogging();
+							}
+
 						} else {
 							if (currentSession != null) {
 								fireNewStateEvent(false, null);
 								currentSession = null;
 							}
 						}
+						consecutiveErrors = 0;
+						deltaTime = timeStepSize;
 					} catch (Exception e) {
 						if (e instanceof InterruptedException) {
 							throw e;
@@ -140,22 +145,23 @@ public class DataAquisitionService {
 
 						log.debug("Error in data aquisition.", e);
 						consecutiveErrors++;
-						log.debug(String.format("This error is the %d consecutive error.", consecutiveErrors));
+						log.debug(String.format(
+								"This error is the %d consecutive error.",
+								consecutiveErrors));
 
-						if (consecutiveErrors > 20) {
-							log.warn("More than 20 consecutive errors. Setting update interval to 5 min");
-							deltaTime = 60000 * 5;
-						}
-						if (consecutiveErrors > 10) {
+						if (consecutiveErrors == 20) {
 							log.warn(
-									"To many consecutive errors. Throtteling service to 60s. Current session will not be stopped by this.");
+									"More than 20 consecutive errors. Setting update interval to 1 min");
 							deltaTime = 60000L;
 						}
-						
+						if (consecutiveErrors == 10) {
+							log.warn(
+									"To many consecutive errors. Throtteling service to 10s. Current session will not be stopped by this.");
+							deltaTime = 10000L;
+						}
+
 					}
 
-					consecutiveErrors = 0;
-					deltaTime = timeStepSize;
 					long currentTime = System.currentTimeMillis();
 					long div = currentTime - lastTime;
 					if (div < deltaTime) {
@@ -190,17 +196,12 @@ public class DataAquisitionService {
 
 	private void getNewDataPoint() {
 		RestTemplate template = new RestTemplate();
-		MappingJackson2HttpMessageConverter convert = new MappingJackson2HttpMessageConverter(
-				Jackson2ObjectMapperBuilder.json().featuresToEnable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
-						.build());
-		convert.setSupportedMediaTypes(Collections.singletonList((MediaType.parseMediaType("text/json"))));
-
-		template.setMessageConverters(Collections.singletonList((convert)));
 		synchronized (dataPointLock) {
 			lastDataPoint = template.getForObject(cigsApi, DataPoint.class);
 			lastDataPoint.setDateTime(LocalDateTime.now());
 		}
-		newDataPointListeners.forEach(listener -> listener.accept(lastDataPoint));
+		newDataPointListeners
+				.forEach(listener -> listener.accept(lastDataPoint));
 	}
 
 	public LogSession getActiveSession() {
@@ -211,8 +212,10 @@ public class DataAquisitionService {
 		public void newState(Boolean currentState, LogSession currentSession);
 	}
 
-	private void fireNewStateEvent(Boolean currentState, LogSession currentSession) {
-		listeners.forEach(listener -> listener.newState(currentState, currentSession));
+	private void fireNewStateEvent(Boolean currentState,
+			LogSession currentSession) {
+		listeners.forEach(
+				listener -> listener.newState(currentState, currentSession));
 	}
 
 	public Boolean isLogging() {
