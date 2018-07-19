@@ -25,4 +25,6 @@ public class LogSession {
 	private LocalDateTime endDate;
 
 	private String comment = "";
+
+	private String logFilePath;
 }

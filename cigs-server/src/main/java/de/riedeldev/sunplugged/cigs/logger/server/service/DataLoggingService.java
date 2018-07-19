@@ -1,5 +1,6 @@
 package de.riedeldev.sunplugged.cigs.logger.server.service;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,6 +25,8 @@ public class DataLoggingService {
 		void newDataPoint(DataPoint point);
 	}
 
+	private LogFileService logFileService;
+
 	private LogSessionRepository sessionRepo;
 
 	private DataPointRepository dataRepo;
@@ -31,8 +34,9 @@ public class DataLoggingService {
 	private List<LiveListener> liveListeners = new LinkedList<>();
 
 	@Autowired
-	public DataLoggingService(LogSessionRepository sessionRepo,
-			DataPointRepository dataRepo) {
+	public DataLoggingService(LogFileService logFileService,
+			LogSessionRepository sessionRepo, DataPointRepository dataRepo) {
+		this.logFileService = logFileService;
 		this.sessionRepo = sessionRepo;
 		this.dataRepo = dataRepo;
 	}
@@ -58,9 +62,9 @@ public class DataLoggingService {
 
 		session.setEndDate(point.getDateTime());
 		point.setSession(session);
-		DataPoint savedPoint = dataRepo.save(point);
+		// DataPoint savedPoint = dataRepo.save(point);
 
-		liveListeners.forEach(listener -> listener.newDataPoint(savedPoint));
+		liveListeners.forEach(listener -> listener.newDataPoint(point));
 		return sessionRepo.save(session);
 	}
 
@@ -78,9 +82,10 @@ public class DataLoggingService {
 		return sessions.stream();
 	}
 
-	public LogSession createNewSession() {
+	public LogSession createNewSession() throws IOException {
 		LogSession session = new LogSession();
 		session.setStartDate(LocalDateTime.now());
+		logFileService.createLogFileForLogSession(session);
 		session.setEndDate(LocalDateTime.now().plusSeconds(1));
 		return sessionRepo.save(session);
 	}

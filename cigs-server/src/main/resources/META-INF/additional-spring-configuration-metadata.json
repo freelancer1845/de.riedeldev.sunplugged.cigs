@@ -8,5 +8,10 @@
     "name": "cigs.runaquisition",
     "type": "java.lang.String",
     "description": "If true, the aquisition starts automatically"
+  },
+  {
+    "name": "logfileservice.path",
+    "type": "java.lang.String",
+    "description": "Path in which the csv logfiles while be saved"
   }
 ]}

@@ -5,6 +5,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import de.riedeldev.sunplugged.cigs.logger.server.service.DataLoggingService;
@@ -12,6 +13,7 @@ import de.riedeldev.sunplugged.cigs.logger.server.service.DataLoggingService;
 @SpringBootApplication
 @EnableScheduling
 @EnableAutoConfiguration
+@ComponentScan(basePackages = "de.riedeldev.sunplugged.cigs.logger.server")
 public class MainApplication {
 
 	public static void main(String[] args) {
@@ -30,10 +32,14 @@ public class MainApplication {
 			// dataPoint.setDateTime(LocalDateTime.now()
 			// .plusSeconds(i));
 			//
-			// dataPoint.setPressureBakingPa(Math.sin(i * Math.PI / 3600.0 * 2.0));
-			// dataPoint.setPressureFullRangePa_1(Math.sin(i * Math.PI / 3600.0 * 2.0));
-			// dataPoint.setPressureFullRangePa_2(Math.sin(i * Math.PI / 3600.0 * 2.0));
-			// dataPoint.setMagnetron_1_I((int) Math.sin(i * Math.PI / 3600.0 * 2.0));
+			// dataPoint.setPressureBakingPa(Math.sin(i * Math.PI / 3600.0 *
+			// 2.0));
+			// dataPoint.setPressureFullRangePa_1(Math.sin(i * Math.PI / 3600.0
+			// * 2.0));
+			// dataPoint.setPressureFullRangePa_2(Math.sin(i * Math.PI / 3600.0
+			// * 2.0));
+			// dataPoint.setMagnetron_1_I((int) Math.sin(i * Math.PI / 3600.0 *
+			// 2.0));
 			// service.addDataPoint(dataPoint, session);
 			// }
 			// }
