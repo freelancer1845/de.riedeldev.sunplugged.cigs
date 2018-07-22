@@ -1,7 +1,9 @@
 package de.riedeldev.sunplugged.cigs.logger.server.service;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
@@ -68,6 +70,11 @@ public class DataLoggingService {
 	public List<DataPoint> getDatapointsOfSession(LogSession session)
 			throws IOException {
 		return logFileService.getDataPoints(session);
+	}
+
+	public InputStream getDownloadStreamForLogSession(LogSession session)
+			throws FileNotFoundException {
+		return logFileService.getInputStreamToLogFile(session);
 	}
 
 	// TODO : This currently uses a hack to avoid transactional error...

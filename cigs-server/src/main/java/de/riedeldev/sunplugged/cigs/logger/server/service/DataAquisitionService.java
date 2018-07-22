@@ -29,7 +29,7 @@ public class DataAquisitionService {
 	@Value("${cigs.runaquisition}")
 	private boolean runAquisition = true;
 
-	private Long timeStepSize = 500L;
+	private Long timeStepSize = 1000L;
 
 	private List<StateListener> listeners = new LinkedList<>();
 

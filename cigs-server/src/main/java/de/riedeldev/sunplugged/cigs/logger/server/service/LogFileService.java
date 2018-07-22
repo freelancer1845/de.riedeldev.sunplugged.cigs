@@ -141,17 +141,28 @@ public class LogFileService {
 
 			private boolean firstByteRead = false;
 
+			private boolean hasLock = false;
+
 			@Override
 			public int read() throws IOException {
 				if (firstByteRead == false) {
 					firstByteRead = true;
+					if (activeSession != null
+							&& session.getId() == activeSession.getId()) {
+						activeAccessLock.lock();
+						hasLock = true;
+					}
 				}
 				return super.read();
 			}
 
 			@Override
 			public void close() throws IOException {
+				if (hasLock) {
+					activeAccessLock.unlock();
+				}
 
+				super.close();
 			}
 		};
 

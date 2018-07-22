@@ -1,7 +1,6 @@
 package de.riedeldev.sunplugged.cigs.logger.server.ui.views;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.nio.file.Paths;
@@ -215,7 +214,8 @@ public class DataView extends GridLayout implements View {
 			public InputStream getStream() {
 				File file = new File(session.getLogFilePath());
 				try {
-					return new FileInputStream(file);
+					return logService
+							.getDownloadStreamForLogSession(session);
 				} catch (FileNotFoundException e) {
 					log.error("Failed to find file " + file.getPath(), e);
 					throw new IllegalStateException("Error download file.", e);
