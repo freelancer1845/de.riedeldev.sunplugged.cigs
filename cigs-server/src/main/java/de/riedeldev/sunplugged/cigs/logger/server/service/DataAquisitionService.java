@@ -1,5 +1,6 @@
 package de.riedeldev.sunplugged.cigs.logger.server.service;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,7 +29,7 @@ public class DataAquisitionService {
 	@Value("${cigs.runaquisition}")
 	private boolean runAquisition = true;
 
-	private Long timeStepSize = 5000L;
+	private Long timeStepSize = 500L;
 
 	private List<StateListener> listeners = new LinkedList<>();
 
@@ -77,7 +78,7 @@ public class DataAquisitionService {
 		listeners.remove(listener);
 	}
 
-	public void startLogging() {
+	public void startLogging() throws IOException {
 		if (currentSession != null) {
 			log.debug("Already logging");
 			throw new IllegalStateException(
@@ -87,7 +88,7 @@ public class DataAquisitionService {
 		prepareForNewSession();
 	}
 
-	private void prepareForNewSession() {
+	private void prepareForNewSession() throws IOException {
 		currentSession = loggingService.createNewSession();
 		shouldLog = true;
 		fireNewStateEvent(true, currentSession);

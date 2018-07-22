@@ -4,6 +4,7 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Random;
 
 import org.apache.commons.beanutils.PropertyUtils;
 import org.springframework.http.ResponseEntity;
@@ -70,8 +71,8 @@ public class TestService {
 		// } else {
 		// return 0.;
 		// }
-		return Math.sin(i * Math.PI / 120.0 * 2.0); // sinus data
-		// return new Random().nextDouble() * 5;
+		// return Math.sin(i * Math.PI / 1800.0 * 2.0); // sinus data
+		return new Random().nextDouble() * 5;
 	}
 
 }

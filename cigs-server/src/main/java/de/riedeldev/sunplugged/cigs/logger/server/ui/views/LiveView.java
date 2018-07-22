@@ -1,5 +1,6 @@
 package de.riedeldev.sunplugged.cigs.logger.server.ui.views;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
@@ -107,6 +108,11 @@ public class LiveView extends VerticalLayout
 			Notification message = new Notification("Start faield",
 					"Tried to start logging, but was already logging.",
 					Type.ERROR_MESSAGE);
+			message.show(getUI().getPage());
+		} catch (IOException e) {
+			log.error("Tried to start logging, but resulted in IOException");
+			Notification message = new Notification("Start faield",
+					e.getMessage(), Type.ERROR_MESSAGE);
 			message.show(getUI().getPage());
 		}
 

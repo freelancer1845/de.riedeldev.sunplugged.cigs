@@ -1,7 +1,10 @@
 package de.riedeldev.sunplugged.cigs.logger.server.ui.views;
 
-import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
@@ -30,7 +33,6 @@ import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
 
 import de.riedeldev.sunplugged.cigs.logger.server.model.LogSession;
-import de.riedeldev.sunplugged.cigs.logger.server.service.DataCSVService;
 import de.riedeldev.sunplugged.cigs.logger.server.service.DataLoggingService;
 import de.riedeldev.sunplugged.cigs.logger.server.ui.ConfirmationDialog;
 import de.riedeldev.sunplugged.cigs.logger.server.ui.SessionDataChart;
@@ -51,7 +53,6 @@ public class DataView extends GridLayout implements View {
 	private DataLoggingService logService;
 	private SessionEditor editor;
 	private SessionDataChart chartComponent;
-	private DataCSVService csvService;
 
 	private DateField endDate;
 	private DateField startDate;
@@ -59,11 +60,10 @@ public class DataView extends GridLayout implements View {
 	private ListDataProvider<LogSession> dataProvider;
 
 	public DataView(SessionEditor editor, DataLoggingService logService,
-			DataCSVService csvService, SessionDataChart chartComponent) {
+			SessionDataChart chartComponent) {
 		super(2, 1);
 		this.editor = editor;
 		this.logService = logService;
-		this.csvService = csvService;
 		this.chartComponent = chartComponent;
 		this.editor.setVisible(false);
 		createContent();
@@ -203,24 +203,25 @@ public class DataView extends GridLayout implements View {
 	}
 
 	private Resource createSessionDownloadResource(LogSession session) {
+
 		return new StreamResource(new StreamSource() {
 
 			/**
 			 * 
 			 */
-			private static final long serialVersionUID = -1011443990479189684L;
+			private static final long serialVersionUID = 5231933199482993327L;
 
 			@Override
 			public InputStream getStream() {
-
-				String csvString;
-				csvString = csvService.sessionToCsv(session);
-				return new ByteArrayInputStream(csvString.getBytes());
-
+				File file = new File(session.getLogFilePath());
+				try {
+					return new FileInputStream(file);
+				} catch (FileNotFoundException e) {
+					log.error("Failed to find file " + file.getPath(), e);
+					throw new IllegalStateException("Error download file.", e);
+				}
 			}
-
-		}, String.format("cigs-%s.csv", session.getStartDate()
-				.format(DateTimeFormatter.ofPattern("yyyy-dd-MM_HH-mm"))));
+		}, Paths.get(session.getLogFilePath()).getFileName().toString());
 	}
 
 	private CssLayout createActionsForSession(LogSession session) {

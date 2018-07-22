@@ -1,5 +1,6 @@
 package de.riedeldev.sunplugged.cigs.logger.server.service;
 
+import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.LinkedList;
@@ -14,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import de.riedeldev.sunplugged.cigs.logger.server.model.DataPoint;
 import de.riedeldev.sunplugged.cigs.logger.server.model.LogSession;
-import de.riedeldev.sunplugged.cigs.logger.server.repository.DataPointRepository;
 import de.riedeldev.sunplugged.cigs.logger.server.repository.LogSessionRepository;
 
 @Component
@@ -29,16 +29,13 @@ public class DataLoggingService {
 
 	private LogSessionRepository sessionRepo;
 
-	private DataPointRepository dataRepo;
-
 	private List<LiveListener> liveListeners = new LinkedList<>();
 
 	@Autowired
 	public DataLoggingService(LogFileService logFileService,
-			LogSessionRepository sessionRepo, DataPointRepository dataRepo) {
+			LogSessionRepository sessionRepo) {
 		this.logFileService = logFileService;
 		this.sessionRepo = sessionRepo;
-		this.dataRepo = dataRepo;
 	}
 
 	public List<LogSession> getSessions() {
@@ -61,16 +58,16 @@ public class DataLoggingService {
 		}
 
 		session.setEndDate(point.getDateTime());
-		point.setSession(session);
-		// DataPoint savedPoint = dataRepo.save(point);
+
+		logFileService.saveDataPoint(point, logSession);
 
 		liveListeners.forEach(listener -> listener.newDataPoint(point));
 		return sessionRepo.save(session);
 	}
 
-	@Transactional(readOnly = true)
-	public List<DataPoint> getDatapointsOfSession(LogSession session) {
-		return dataRepo.findAllBySession(session);
+	public List<DataPoint> getDatapointsOfSession(LogSession session)
+			throws IOException {
+		return logFileService.getDataPoints(session);
 	}
 
 	// TODO : This currently uses a hack to avoid transactional error...
@@ -79,7 +76,11 @@ public class DataLoggingService {
 		Stream<LogSession> stream = sessionRepo.findAllByOrderByIdDesc();
 		List<LogSession> sessions = stream.collect(Collectors.toList());
 
-		return sessions.stream();
+		return sessions.stream().filter(session -> {
+			File file = new File(session.getLogFilePath());
+			return file.exists();
+
+		});
 	}
 
 	public LogSession createNewSession() throws IOException {
@@ -94,13 +95,9 @@ public class DataLoggingService {
 		return sessionRepo.count();
 	}
 
-	public Long getCountOfDataPointsBySession(LogSession session) {
-		return dataRepo.countBySession(session);
-	}
-
 	public void deleteLogSession(LogSession session) {
-		dataRepo.deleteAllBySession(session);
 		sessionRepo.delete(session);
+		logFileService.deleteDataFileForLogSession(session);
 	}
 
 	@Transactional(readOnly = true)

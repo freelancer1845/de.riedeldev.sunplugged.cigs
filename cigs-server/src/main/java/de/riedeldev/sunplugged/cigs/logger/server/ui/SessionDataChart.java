@@ -35,9 +35,11 @@ import de.riedeldev.sunplugged.cigs.logger.server.model.DataPoint;
 import de.riedeldev.sunplugged.cigs.logger.server.model.DataPointUtils.DataPointField;
 import de.riedeldev.sunplugged.cigs.logger.server.model.LogSession;
 import de.riedeldev.sunplugged.cigs.logger.server.service.DataLoggingService;
+import lombok.extern.slf4j.Slf4j;
 
 @SpringComponent
 @UIScope
+@Slf4j
 public class SessionDataChart extends VerticalLayout {
 
 	/**
@@ -94,8 +96,12 @@ public class SessionDataChart extends VerticalLayout {
 			setVisible(false);
 		}
 		setVisible(true);
-
-		dataPoints = service.getDatapointsOfSession(session);
+		try {
+			dataPoints = service.getDatapointsOfSession(session);
+		} catch (Exception e) {
+			log.error("Failed load datapoints.", e);
+			throw e;
+		}
 
 		updateChart();
 

@@ -8,7 +8,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import de.riedeldev.sunplugged.cigs.logger.server.model.LogSession;
 import de.riedeldev.sunplugged.cigs.logger.server.service.DataLoggingService;
+import de.riedeldev.sunplugged.cigs.logger.server.service.TestService;
 
 @SpringBootApplication
 @EnableScheduling
@@ -21,28 +23,16 @@ public class MainApplication {
 	}
 
 	@Bean
-	public CommandLineRunner loadData(DataLoggingService service) {
+	public CommandLineRunner loadData(DataLoggingService service,
+			TestService testService) {
 		return args -> {
-			// for (int j = 0; j < 1; j++) {
-			// LogSession session = service.createNewSession();
-			// Random random = new Random();
-			// System.out.println("Session Created");
-			// for (int i = 0; i < 3600 * 2; i++) {
-			// DataPoint dataPoint = new DataPoint();
-			// dataPoint.setDateTime(LocalDateTime.now()
-			// .plusSeconds(i));
-			//
-			// dataPoint.setPressureBakingPa(Math.sin(i * Math.PI / 3600.0 *
-			// 2.0));
-			// dataPoint.setPressureFullRangePa_1(Math.sin(i * Math.PI / 3600.0
-			// * 2.0));
-			// dataPoint.setPressureFullRangePa_2(Math.sin(i * Math.PI / 3600.0
-			// * 2.0));
-			// dataPoint.setMagnetron_1_I((int) Math.sin(i * Math.PI / 3600.0 *
-			// 2.0));
-			// service.addDataPoint(dataPoint, session);
-			// }
-			// }
+			for (int j = 0; j < 2; j++) {
+				LogSession session = service.createNewSession();
+				for (int i = 0; i < 10000; i++) {
+					service.addDataPoint(testService.getDataPoint().getBody(),
+							session);
+				}
+			}
 		};
 
 	}
