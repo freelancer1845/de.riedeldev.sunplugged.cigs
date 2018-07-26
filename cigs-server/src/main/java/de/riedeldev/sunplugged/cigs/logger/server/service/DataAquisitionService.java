@@ -26,7 +26,7 @@ public class DataAquisitionService {
 	@Value("${cigs.api}")
 	private String cigsApi;
 
-	@Value("${cigs.runaquisition}")
+	@Value("${cigs.runaquisition:true}")
 	private boolean runAquisition = true;
 
 	private Long timeStepSize = 1000L;
@@ -195,8 +195,10 @@ public class DataAquisitionService {
 		}
 	}
 
+	@Autowired
+	private RestTemplate template;
+
 	private void getNewDataPoint() {
-		RestTemplate template = new RestTemplate();
 		synchronized (dataPointLock) {
 			lastDataPoint = template.getForObject(cigsApi, DataPoint.class);
 			lastDataPoint.setDateTime(LocalDateTime.now());
@@ -235,6 +237,13 @@ public class DataAquisitionService {
 
 	public void removeDataPointListener(Consumer<DataPoint> consumer) {
 		newDataPointListeners.remove(consumer);
+	}
+
+	public void setTimeStepSize(Long timeStepSize) {
+		this.timeStepSize = timeStepSize;
+	}
+	public Long getTimeStepSize() {
+		return timeStepSize;
 	}
 
 }

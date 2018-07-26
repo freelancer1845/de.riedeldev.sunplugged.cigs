@@ -25,6 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DataPointsCache {
 
+	private static final int CACHE_SIZE = 6;
+
 	private Map<String, CachedDataPointFile> cache = new LinkedHashMap<>();
 
 	public List<DataPoint> getDataPoints(LogSession logSession)
@@ -62,7 +64,7 @@ public class DataPointsCache {
 			throws FileNotFoundException, IOException {
 		File file = new File(logSession.getLogFilePath());
 
-		if (cache.size() > 30) {
+		if (cache.size() > CACHE_SIZE) {
 			cache.remove(cache.entrySet().iterator().next().getKey());
 		}
 		try (FileReader reader = new FileReader(file);

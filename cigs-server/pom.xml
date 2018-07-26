@@ -6,7 +6,7 @@
 
 	<groupId>de.riedeldev.sunplugged.cigs.logger.server</groupId>
 	<artifactId>cigs-web</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0-RELEASE</version>
 	<packaging>jar</packaging>
 
 	<name>main</name>

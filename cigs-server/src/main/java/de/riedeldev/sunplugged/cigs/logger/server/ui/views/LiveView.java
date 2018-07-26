@@ -12,7 +12,9 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.springframework.util.ReflectionUtils;
 
 import com.vaadin.data.Binder;
+import com.vaadin.icons.VaadinIcons;
 import com.vaadin.navigator.View;
+import com.vaadin.server.UserError;
 import com.vaadin.spring.annotation.SpringView;
 import com.vaadin.spring.annotation.UIScope;
 import com.vaadin.ui.Button;
@@ -67,6 +69,39 @@ public class LiveView extends VerticalLayout
 		stopButton.addClickListener(this::handleStopClick);
 		stopButton.setStyleName(ValoTheme.BUTTON_DANGER);
 		startStopLayout.addComponent(stopButton);
+
+		TextField logspeedField = new TextField("Logspeed in ms");
+		logspeedField.setValue(String.valueOf(aquiService.getTimeStepSize()));
+		logspeedField.addValueChangeListener(newValue -> {
+			long value;
+			UserError error = null;
+			try {
+				value = Long.parseLong(newValue.getValue());
+				if (value < 1000) {
+					error = new UserError(
+							"Value must be larger or equal 1000 = 1s");
+				} else if (value > 30000) {
+					error = new UserError(
+							"Value must be smaller or equal 30000 = 3s");
+				}
+				if (error == null) {
+					logspeedField.setComponentError(null);
+					logspeedField.setIcon(VaadinIcons.CHECK);
+					aquiService.setTimeStepSize(value);
+					logspeedField.setValue(
+							String.valueOf(aquiService.getTimeStepSize()));
+				}
+
+			} catch (NumberFormatException e) {
+				error = new UserError("Must be an integer! " + e.getMessage());
+			}
+			if (error != null) {
+				logspeedField.setComponentError(error);
+				logspeedField.setIcon(VaadinIcons.CLOSE);
+			}
+
+		});
+		addComponent(logspeedField);
 
 		addComponent(startStopLayout);
 
