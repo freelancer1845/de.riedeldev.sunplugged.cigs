@@ -341,7 +341,7 @@ public class LogFileService {
 						format = new DecimalFormat("#.###",
 								DecimalFormatSymbols.getInstance(Locale.US));
 					} else {
-						format = new DecimalFormat("#.#E00",
+						format = new DecimalFormat("#.###E00",
 								DecimalFormatSymbols.getInstance(Locale.US));
 					}
 					value = format.format(number.doubleValue());
