@@ -8,7 +8,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.text.NumberFormat;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -335,7 +336,14 @@ public class LogFileService {
 				} else if (number.isNaN()) {
 					value = "NaN";
 				} else {
-					NumberFormat format = NumberFormat.getInstance(Locale.US);
+					DecimalFormat format;
+					if (number > 0.001 && number < 10000) {
+						format = new DecimalFormat("#.###",
+								DecimalFormatSymbols.getInstance(Locale.US));
+					} else {
+						format = new DecimalFormat("#.#E00",
+								DecimalFormatSymbols.getInstance(Locale.US));
+					}
 					value = format.format(number.doubleValue());
 				}
 
