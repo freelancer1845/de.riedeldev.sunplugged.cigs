@@ -80,7 +80,9 @@ public class DataPointsCache {
 			}
 
 			// Skip already read entries
-			br.skip(cachedFile.getCachedDataPoints().size());
+			for (int i = 0;i < cachedFile.getCachedDataPoints().size(); i++) {
+				br.readLine();
+			}
 
 			List<DataPointField> fields = DataPointField
 					.getAllDataPointFieldsSorted();

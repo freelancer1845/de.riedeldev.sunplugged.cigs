@@ -22,7 +22,6 @@ export class SessionService {
 
   getSessionAsCSV(session: LogSession): Observable<any> {
     const par = new HttpParams().set('id', session.id.toString());
-    // this.http.get<Response>(environment.api + '/api/sessions/loadcsv', { params: par }).pipe(map(response => new Blob([response.blob()], { type: 'text/csv' })));
     return this.http.get(environment.api + '/api/sessions/loadcsv', { params: par, responseType: 'blob' });
   }
 

@@ -76,8 +76,7 @@ public class LogFileService {
 			file.mkdir();
 		}
 		if (file.isDirectory() == false) {
-			throw new IllegalStateException(
-					"Path for logfiles was not a directory");
+			throw new IllegalStateException("Path for logfiles was not a directory");
 		}
 
 		executor.submit(() -> {
@@ -89,16 +88,13 @@ public class LogFileService {
 						break;
 					}
 					long timeSinceLastFlush = System.currentTimeMillis();
-					while ((System.currentTimeMillis()
-							- timeSinceLastFlush) < 3000) {
+					while ((System.currentTimeMillis() - timeSinceLastFlush) < 3000) {
 
-						Pair<LogSession, DataPoint> nextPair = queue.poll(500,
-								TimeUnit.MILLISECONDS);
+						Pair<LogSession, DataPoint> nextPair = queue.poll(500, TimeUnit.MILLISECONDS);
 						if (nextPair == null) {
 							continue;
 						}
-						if (activeSession != null && activeSession
-								.getId() != nextPair.getFirst().getId()) {
+						if (activeSession != null && activeSession.getId() != nextPair.getFirst().getId()) {
 							try {
 								activeAccessLock.lock();
 								flushBuffer(activeSession, buffer);
@@ -121,7 +117,12 @@ public class LogFileService {
 
 					}
 					if (activeSession != null) {
-						flushBuffer(activeSession, buffer);
+						try {
+							activeAccessLock.lock();
+							flushBuffer(activeSession, buffer);
+						} finally {
+							activeAccessLock.unlock();
+						}
 						timeSinceLastFlush = System.currentTimeMillis();
 					}
 				}
@@ -135,10 +136,8 @@ public class LogFileService {
 
 	}
 
-	public InputStream getInputStreamToLogFile(LogSession session)
-			throws FileNotFoundException {
-		FileInputStream stream = new FileInputStream(
-				new File(session.getLogFilePath())) {
+	public InputStream getInputStreamToLogFile(LogSession session) throws FileNotFoundException {
+		FileInputStream stream = new FileInputStream(new File(session.getLogFilePath())) {
 
 			private boolean firstByteRead = false;
 
@@ -148,13 +147,36 @@ public class LogFileService {
 			public int read() throws IOException {
 				if (firstByteRead == false) {
 					firstByteRead = true;
-					if (activeSession != null
-							&& session.getId() == activeSession.getId()) {
+					if (activeSession != null && session.getId() == activeSession.getId()) {
 						activeAccessLock.lock();
 						hasLock = true;
 					}
 				}
 				return super.read();
+			}
+
+			@Override
+			public int read(byte[] b) throws IOException {
+				if (firstByteRead == false) {
+					firstByteRead = true;
+					if (activeSession != null && session.getId() == activeSession.getId()) {
+						activeAccessLock.lock();
+						hasLock = true;
+					}
+				}
+				return super.read(b);
+			}
+
+			@Override
+			public int read(byte[] b, int off, int len) throws IOException {
+				if (firstByteRead == false) {
+					firstByteRead = true;
+					if (activeSession != null && session.getId() == activeSession.getId()) {
+						activeAccessLock.lock();
+						hasLock = true;
+					}
+				}
+				return super.read(b, off, len);
 			}
 
 			@Override
@@ -170,15 +192,13 @@ public class LogFileService {
 		return stream;
 	}
 
-	private void flushBuffer(LogSession currentSession, StringBuilder buffer)
-			throws IOException {
+	private void flushBuffer(LogSession currentSession, StringBuilder buffer) throws IOException {
 		if (buffer.length() < 1) {
 			return;
 		}
 		File logFile = new File(currentSession.getLogFilePath());
 		checkFileAccess(logFile);
-		try (BufferedWriter br = new BufferedWriter(
-				new FileWriter(logFile, true))) {
+		try (BufferedWriter br = new BufferedWriter(new FileWriter(logFile, true))) {
 			br.write(buffer.toString());
 			buffer.delete(0, buffer.length());
 		} catch (IOException e) {
@@ -187,20 +207,17 @@ public class LogFileService {
 	}
 
 	public boolean checkIfLogFileExists(LogSession logSession) {
-		if (logSession.getLogFilePath() == null
-				|| logSession.getLogFilePath().isEmpty()) {
+		if (logSession.getLogFilePath() == null || logSession.getLogFilePath().isEmpty()) {
 			return false;
 		}
 		File logfile = new File(logSession.getLogFilePath());
 		if (logfile.isDirectory()) {
-			throw new IllegalStateException(
-					"LogSession has a directory as logfile path attached!");
+			throw new IllegalStateException("LogSession has a directory as logfile path attached!");
 		}
 		return logfile.exists();
 	}
 
-	public LogSession createLogFileForLogSession(LogSession logSession)
-			throws IOException {
+	public LogSession createLogFileForLogSession(LogSession logSession) throws IOException {
 		logSession.setLogFilePath(generateUniquePath(logSession));
 
 		File file = new File(logSession.getLogFilePath());
@@ -216,10 +233,9 @@ public class LogFileService {
 		try (FileWriter writer = new FileWriter(file)) {
 			StringBuilder builder = new StringBuilder();
 
-			List<DataPointField> fields = DataPointField
-					.getAllDataPointFieldsSorted();
-			fields.stream().sequential().forEach(field -> builder
-					.append(String.format("\"%s\"" + DELIMITER, field.name)));
+			List<DataPointField> fields = DataPointField.getAllDataPointFieldsSorted();
+			fields.stream().sequential()
+					.forEach(field -> builder.append(String.format("\"%s\"" + DELIMITER, field.name)));
 
 			builder.deleteCharAt(builder.length() - 1);
 			builder.append(NEWLINE);
@@ -233,8 +249,7 @@ public class LogFileService {
 		builder.append(path);
 		builder.append("/");
 		builder.append(FILE_PREFIX);
-		builder.append(logSession.getStartDate()
-				.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm")));
+		builder.append(logSession.getStartDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm")));
 		String filePathWithoutEnding = builder.toString();
 
 		File file;
@@ -259,8 +274,7 @@ public class LogFileService {
 		// executor.submit(() -> writeDataPointToFile(point, logSession));
 	}
 
-	public List<DataPoint> getDataPoints(LogSession session)
-			throws IOException {
+	public List<DataPoint> getDataPoints(LogSession session) throws IOException {
 		List<DataPoint> points = null;
 		if (activeSession != null) {
 			if (activeSession.getId() == session.getId()) {
@@ -274,7 +288,12 @@ public class LogFileService {
 		}
 
 		if (points == null) {
-			points = cache.getDataPoints(session);
+			try {
+				activeAccessLock.lock();
+				points = cache.getDataPoints(session);
+			} finally {
+				activeAccessLock.unlock();
+			}
 		}
 
 		if (points != null) {
@@ -304,33 +323,28 @@ public class LogFileService {
 			throw new IOException("Not enough storage available. < 50MB");
 		}
 	}
+
 	private String dataPointToCsvLine(DataPoint point) {
-		List<DataPointField> fields = DataPointField
-				.getAllDataPointFieldsSorted();
+		List<DataPointField> fields = DataPointField.getAllDataPointFieldsSorted();
 
 		StringBuilder builder = new StringBuilder();
 
 		fields.stream().map(field -> fieldFromDataPointToString(field, point))
-				.forEach(value -> builder
-						.append(String.format("\"%s\"" + DELIMITER, value)));
+				.forEach(value -> builder.append(String.format("\"%s\"" + DELIMITER, value)));
 		builder.deleteCharAt(builder.length() - 1);
 		builder.append(NEWLINE);
 		return builder.toString();
 	}
 
-	private String fieldFromDataPointToString(DataPointField field,
-			DataPoint dataPoint) {
+	private String fieldFromDataPointToString(DataPointField field, DataPoint dataPoint) {
 		String value;
 		try {
 			if (field.field.getType() == LocalDateTime.class) {
 
-				LocalDateTime time = (LocalDateTime) PropertyUtils
-						.getProperty(dataPoint, field.field.getName());
-				value = time.format(
-						DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+				LocalDateTime time = (LocalDateTime) PropertyUtils.getProperty(dataPoint, field.field.getName());
+				value = time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 			} else if (field.field.getType() == Double.class) {
-				Double number = (Double) PropertyUtils.getProperty(dataPoint,
-						field.field.getName());
+				Double number = (Double) PropertyUtils.getProperty(dataPoint, field.field.getName());
 				if (number == null) {
 					value = "N\\A";
 				} else if (number.isNaN()) {
@@ -338,26 +352,22 @@ public class LogFileService {
 				} else {
 					DecimalFormat format;
 					if (number > 0.001 && number < 10000) {
-						format = new DecimalFormat("#.###",
-								DecimalFormatSymbols.getInstance(Locale.US));
+						format = new DecimalFormat("#.###", DecimalFormatSymbols.getInstance(Locale.US));
 					} else {
-						format = new DecimalFormat("#.###E00",
-								DecimalFormatSymbols.getInstance(Locale.US));
+						format = new DecimalFormat("#.###E00", DecimalFormatSymbols.getInstance(Locale.US));
 					}
 					value = format.format(number.doubleValue());
 				}
 
 			} else {
-				Object object = PropertyUtils.getProperty(dataPoint,
-						field.field.getName());
+				Object object = PropertyUtils.getProperty(dataPoint, field.field.getName());
 				if (object == null) {
 					value = "N\\A";
 				} else {
 					value = object.toString();
 				}
 			}
-		} catch (IllegalAccessException | InvocationTargetException
-				| NoSuchMethodException e) {
+		} catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
 			throw new IllegalArgumentException("Faild to read field", e);
 		}
 

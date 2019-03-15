@@ -29,17 +29,17 @@ public class MainApplication {
 		return builder.build();
 	}
 
-	@Bean
-	public CommandLineRunner loadData(DataLoggingService service, TestService testService) {
-		return args -> {
-			for (int j = 0; j < 2; j++) {
-				LogSession session = service.createNewSession();
-				for (int i = 0; i < 10000; i++) {
-					service.addDataPoint(testService.getDataPoint().getBody(), session);
-				}
-			}
-		};
+	// @Bean
+	// public CommandLineRunner loadData(DataLoggingService service, TestService testService) {
+	// 	// return args -> {
+	// 	// 	for (int j = 0; j < 2; j++) {
+	// 	// 		LogSession session = service.createNewSession();
+	// 	// 		for (int i = 0; i < 10000; i++) {
+	// 	// 			service.addDataPoint(testService.getDataPoint().getBody(), session);
+	// 	// 		}
+	// 	// 	}
+	// 	// };
 
-	}
+	// }
 
 }

@@ -2,6 +2,35 @@ import { Component, OnInit, Input, ViewChild, ElementRef } from '@angular/core';
 import { DataPoint } from 'src/app/core/data.model';
 import { DatePipe } from '@angular/common';
 import { BaseChartDirective } from 'ng2-charts';
+import { MatTableDataSource } from '@angular/material/table';
+import { SelectionModel } from '@angular/cdk/collections';
+
+
+export interface Plottable {
+  name: string,
+  get: (point: DataPoint) => {},
+}
+
+const TABLE_DATA: Plottable[] = [
+  {
+    name: 'Magnetron 1 A',
+    get: point => {
+      return { x: new Date(point.dateTime), y: point.magnetron_1_I };
+    }
+  },
+  {
+    name: 'Magnetron 2 A',
+    get: point => {
+      return { x: new Date(point.dateTime), y: point.magnetron_2_I };
+    }
+  },
+  {
+    name: 'Pressure Baking Pa',
+    get: point => {
+      return { x: new Date(point.dateTime), y: point.pressureBakingPa };
+    }
+  },
+];
 
 @Component({
   selector: 'app-data-chart',
@@ -9,6 +38,11 @@ import { BaseChartDirective } from 'ng2-charts';
   styleUrls: ['./data-chart.component.css']
 })
 export class DataChartComponent implements OnInit {
+
+
+  columnsToDisplay: string[] = ['select', 'property'];
+  dataSource = new MatTableDataSource<Plottable>(TABLE_DATA);
+  selection = new SelectionModel<Plottable>(true, []);
 
   @ViewChild(BaseChartDirective) chart: BaseChartDirective;
   @ViewChild('chart') canvas: ElementRef;
@@ -67,26 +101,55 @@ export class DataChartComponent implements OnInit {
 
   localData: DataPoint[];
   @Input()
-  set data(data: DataPoint[]) {
-    if (data !== undefined) {
+  set data(input: DataPoint[]) {
+    // this.selection.clear();
+    if (input !== undefined) {
       this.visible = true;
     } else {
       this.visible = false;
       return;
     }
-    this.localData = data.slice(0, 50);
+
+    // if (this.selection.isEmpty()) {
+    //   this.selection.select(TABLE_DATA[0]);
+    // }
+    this.localData = input;
 
     this.updateLabels();
-    this.updateData();
+    this.createData();
 
     this.chart.ngOnDestroy();
     this.chart.options = this.chartOptions;
+    if (this.chartData === undefined || this.chartData.length === 0) {
+      this.chartData = [{ data: {}, label: 'Series A' },
+      { data: {}, label: 'Series B' }
+      ];
+    }
     this.chart.chart = this.chart.getChartBuilder(this.chart.ctx);
 
   }
   constructor() { }
 
   ngOnInit() {
+    this.selection.changed.subscribe(change => {
+      if (this.localData !== undefined) {
+        this.updateData();
+      }
+    });
+  }
+
+  /** Whether the number of selected elements matches the total number of rows. */
+  isAllSelected() {
+    const numSelected = this.selection.selected.length;
+    const numRows = this.dataSource.data.length;
+    return numSelected === numRows;
+  }
+
+  /** Selects all rows if they are not all selected; otherwise clear selection. */
+  masterToggle() {
+    this.isAllSelected() ?
+      this.selection.clear() :
+      this.dataSource.data.forEach(row => this.selection.select(row));
   }
 
   private updateLabels() {
@@ -133,17 +196,38 @@ export class DataChartComponent implements OnInit {
     };
   }
 
+  private createData() {
+    this.chartData = [];
+    this.selection.selected.forEach(plottable => {
+      this.chartData.push(
+        {
+          data: this.localData.map(point => {
+            return plottable.get(point);
+          }), label: plottable.name
+        }
+      );
+    });
+  }
+
   private updateData() {
-    this.chartData = [
-      {
-        data: this.localData.map(point => {
-          const s = {
-            x: new Date(point.dateTime), y: point.magnetron_1_I
-          }
-          return s;
-        }), label: 'Magnetron 1 I'
-      }
-    ];
+    // this.chartData = []
+    this.chartData = this.chartData.filter(data => this.selection.selected.find(plottable => plottable.name === data.label) !== undefined);
+    this.selection.selected.filter(plottable => this.chartData.find(data => data.label !== plottable.name) === undefined).forEach(plottable => {
+      console.log("Plotting");
+      console.log(plottable.name);
+      this.chartData.push(
+        {
+          data: this.localData.map(point => {
+            return plottable.get(point);
+          }), label: plottable.name
+        }
+      );
+    });
+    if (this.selection.isEmpty()) {
+      this.chartData = [{ data: {}, label: 'Series A' },
+      { data: {}, label: 'Series B' }
+      ];
+    }
   }
 
 }
