@@ -1,0 +1,4 @@
+<div fxLayout="row" fxLayoutGap="25px" fxLayoutAlign="start start">
+  <app-data-table (toChart)="handlePlot($event)"></app-data-table>
+  <app-data-chart [data]="plotData"></app-data-chart>
+</div>

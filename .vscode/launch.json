@@ -1,0 +1,11 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - MainApplication",
+            "request": "launch",
+            "mainClass": "de.riedeldev.sunplugged.cigs.logger.server.MainApplication",
+            "projectName": "cigs-web"
+        }
+    ]
+}

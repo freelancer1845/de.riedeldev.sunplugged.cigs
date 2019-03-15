@@ -1,0 +1,20 @@
+<mat-toolbar color="primary">
+  <mat-toolbar-row>
+    <span>Cigs Data Logging</span>
+    <mat-divider></mat-divider>
+  </mat-toolbar-row>
+  <mat-toolbar-row>
+    <button [routerLink]="[ '/logging']" mat-button>Logging</button>
+    <button [routerLink]="[ '/data']" mat-button>Data</button>
+  </mat-toolbar-row>
+  <mat-divider></mat-divider>
+  <mat-toolbar-row>
+    <mat-icon *ngIf="logState?.state">check_circle</mat-icon>
+    <mat-icon *ngIf="!logState?.state">power_settings_new</mat-icon>
+    <span *ngIf="!logState?.state">Currently not logging</span>
+    <span *ngIf="logState?.state">Logging to {{logState.session.id}}</span>
+  </mat-toolbar-row>
+</mat-toolbar>
+<mat-card>
+  <router-outlet></router-outlet>
+</mat-card>

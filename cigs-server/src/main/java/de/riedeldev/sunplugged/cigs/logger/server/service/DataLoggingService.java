@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,8 +35,7 @@ public class DataLoggingService {
 	private List<LiveListener> liveListeners = new LinkedList<>();
 
 	@Autowired
-	public DataLoggingService(LogFileService logFileService,
-			LogSessionRepository sessionRepo) {
+	public DataLoggingService(LogFileService logFileService, LogSessionRepository sessionRepo) {
 		this.logFileService = logFileService;
 		this.sessionRepo = sessionRepo;
 	}
@@ -52,9 +52,8 @@ public class DataLoggingService {
 		if (point.getDateTime() == null) {
 			point.setDateTime(LocalDateTime.now());
 		}
-		LogSession session = sessionRepo.findById(logSession.getId())
-				.orElseThrow(() -> new IllegalArgumentException(String.format(
-						"No Session with id %d exists.", logSession.getId())));
+		LogSession session = sessionRepo.findById(logSession.getId()).orElseThrow(
+				() -> new IllegalArgumentException(String.format("No Session with id %d exists.", logSession.getId())));
 		if (session.getStartDate() == null) {
 			session.setStartDate(point.getDateTime());
 		}
@@ -62,19 +61,24 @@ public class DataLoggingService {
 		session.setEndDate(point.getDateTime());
 
 		logFileService.saveDataPoint(point, logSession);
-
 		liveListeners.forEach(listener -> listener.newDataPoint(point));
 		return sessionRepo.save(session);
 	}
 
-	public List<DataPoint> getDatapointsOfSession(LogSession session)
-			throws IOException {
+	public List<DataPoint> getDatapointsOfSession(LogSession session) throws IOException {
 		return logFileService.getDataPoints(session);
 	}
 
-	public InputStream getDownloadStreamForLogSession(LogSession session)
-			throws FileNotFoundException {
+	public List<DataPoint> getDatapointsOfSessionById(long id) throws IOException {
+		return logFileService.getDataPoints(sessionRepo.getOne(id));
+	}
+
+	public InputStream getDownloadStreamForLogSession(LogSession session) throws FileNotFoundException {
 		return logFileService.getInputStreamToLogFile(session);
+	}
+
+	public InputStream getDownloadStreamForLogId(long id) throws FileNotFoundException {
+		return logFileService.getInputStreamToLogFile(sessionRepo.getOne(id));
 	}
 
 	// TODO : This currently uses a hack to avoid transactional error...
@@ -105,6 +109,14 @@ public class DataLoggingService {
 	public void deleteLogSession(LogSession session) {
 		sessionRepo.delete(session);
 		logFileService.deleteDataFileForLogSession(session);
+	}
+
+	public void deleteLogSessionById(long id) {
+		LogSession session = sessionRepo.getOne(id);
+		if (session == null) {
+			throw new IllegalArgumentException("Session does not exist");
+		}
+		deleteLogSession(session);
 	}
 
 	@Transactional(readOnly = true)

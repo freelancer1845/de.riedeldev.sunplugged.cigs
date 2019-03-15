@@ -2,16 +2,21 @@ package de.riedeldev.sunplugged.cigs.logger.server.service;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 import javax.annotation.PostConstruct;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -63,15 +68,13 @@ public class DataAquisitionService {
 		if (runAquisition == true) {
 			executor.execute(runnable);
 		} else {
-			log.warn(
-					"Auqisition service is not running! (Setting: cigs.runaquisition=false");
+			log.warn("Auqisition service is not running! (Setting: cigs.runaquisition=false");
 		}
 	}
 
 	public void addStateListener(StateListener listener) {
 		listeners.add(listener);
-		listener.newState(runnable.isRunning(),
-				runnable.isRunning() ? currentSession : null);
+		listener.newState(runnable.isRunning(), runnable.isRunning() ? currentSession : null);
 	}
 
 	public void removeListener(StateListener listener) {
@@ -81,8 +84,7 @@ public class DataAquisitionService {
 	public void startLogging() throws IOException {
 		if (currentSession != null) {
 			log.debug("Already logging");
-			throw new IllegalStateException(
-					"Tried to start logging, but were already logging to a session.");
+			throw new IllegalStateException("Tried to start logging, but were already logging to a session.");
 		}
 		log.debug("Starting logging...");
 		prepareForNewSession();
@@ -99,8 +101,7 @@ public class DataAquisitionService {
 	}
 
 	private void logDataPoint() {
-		currentSession = loggingService.addDataPoint(lastDataPoint,
-				currentSession);
+		currentSession = loggingService.addDataPoint(lastDataPoint, currentSession);
 	}
 
 	private final class LogRunnable implements Runnable {
@@ -116,7 +117,7 @@ public class DataAquisitionService {
 			running = true;
 
 			try {
-				Thread.sleep(10000);
+				Thread.sleep(5000);
 				while (running) {
 					long lastTime = System.currentTimeMillis();
 					try {
@@ -146,19 +147,23 @@ public class DataAquisitionService {
 
 						log.debug("Error in data aquisition.", e);
 						consecutiveErrors++;
-						log.debug(String.format(
-								"This error is the %d consecutive error.",
-								consecutiveErrors));
+						log.debug(String.format("This error is the %d consecutive error.", consecutiveErrors));
 
 						if (consecutiveErrors == 20) {
-							log.warn(
-									"More than 20 consecutive errors. Setting update interval to 1 min");
+							log.warn("More than 20 consecutive errors. Setting update interval to 1 min");
 							deltaTime = 60000L;
 						}
 						if (consecutiveErrors == 10) {
 							log.warn(
 									"To many consecutive errors. Throtteling service to 10s. Current session will not be stopped by this.");
 							deltaTime = 10000L;
+						}
+
+						if (shouldLog == false) {
+							if (currentSession != null) {
+								fireNewStateEvent(false, null);
+								currentSession = null;
+							}
 						}
 
 					}
@@ -198,13 +203,16 @@ public class DataAquisitionService {
 	@Autowired
 	private RestTemplate template;
 
+	@Autowired
+	private SimpMessagingTemplate simpTemplate;
+
 	private void getNewDataPoint() {
 		synchronized (dataPointLock) {
 			lastDataPoint = template.getForObject(cigsApi, DataPoint.class);
 			lastDataPoint.setDateTime(LocalDateTime.now());
 		}
-		newDataPointListeners
-				.forEach(listener -> listener.accept(lastDataPoint));
+		simpTemplate.convertAndSend("/topic/data", lastDataPoint);
+		newDataPointListeners.forEach(listener -> listener.accept(lastDataPoint));
 	}
 
 	public LogSession getActiveSession() {
@@ -215,10 +223,12 @@ public class DataAquisitionService {
 		public void newState(Boolean currentState, LogSession currentSession);
 	}
 
-	private void fireNewStateEvent(Boolean currentState,
-			LogSession currentSession) {
-		listeners.forEach(
-				listener -> listener.newState(currentState, currentSession));
+	private void fireNewStateEvent(Boolean currentState, LogSession currentSession) {
+		Map<String, Object> data = new HashMap<>();
+		data.put("state", currentState);
+		data.put("session", currentSession);
+		simpTemplate.convertAndSend("/topic/state", data);
+		listeners.forEach(listener -> listener.newState(currentState, currentSession));
 	}
 
 	public Boolean isLogging() {
@@ -242,6 +252,7 @@ public class DataAquisitionService {
 	public void setTimeStepSize(Long timeStepSize) {
 		this.timeStepSize = timeStepSize;
 	}
+
 	public Long getTimeStepSize() {
 		return timeStepSize;
 	}

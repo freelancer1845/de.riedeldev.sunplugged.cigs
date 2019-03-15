@@ -1,0 +1,251 @@
+<div fxLayout='column' fxLayoutGap="10px">
+  <div class="container">
+    <form [formGroup]="logspeedFormGroup">
+      <mat-form-field>
+        <input matInput placeholder="Logspeed in ms" formControlName="logspeedCtrl" required>
+      </mat-form-field>
+    </form>
+  </div>
+  <div class="container">
+    <button mat-raised-button color="primary" (click)="startLogging()">Start Logging</button>
+    <button mat-raised-button color="warn" (click)="stopLogging()">Stop Logging</button>
+  </div>
+  <div class="container">
+    <mat-divider></mat-divider>
+  </div>
+  <div class="container" *ngIf="data !== undefined">
+
+    <div fxLayout='column'fxLayoutGap="20px">
+      <div fxLayout='row' fxLayoutGap="5px">
+        <mat-form-field>
+          <mat-label>Zeit</mat-label>
+          <input matInput placeholder="Zeit" [value]="data?.dateTime | date:'HH:mm - dd.MM.yyyy'" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>P Baking(Pa)</mat-label>
+          <input matInput [value]="data.pressureBakingPa.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>P Full Range 1(Pa)</mat-label>
+          <input matInput [value]="data.pressureFullRangeuPa_1.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>P Full Range 2(Pa)</mat-label>
+          <input matInput [value]="data.pressureFullRangeuPa_2.toFixed(4)" readonly="true">
+        </mat-form-field>
+      </div>
+      <div class="container">
+        <mat-divider></mat-divider>
+      </div>
+      <div fxLayout='row' fxLayoutGap="5px">
+        <mat-form-field>
+          <mat-label>I Magnetron 1 (A)</mat-label>
+          <input matInput [value]="data.magnetron_1_I.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>I Magnetron 2 (A)</mat-label>
+          <input matInput [value]="data.magnetron_2_I.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>I Magnetron 3 (A)</mat-label>
+          <input matInput [value]="data.magnetron_3_I.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>I Magnetron 4 (A)</mat-label>
+          <input matInput [value]="data.magnetron_4_I.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>I Magnetron 5 (A)</mat-label>
+          <input matInput [value]="data.magnetron_5_I.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>I Magnetron 6 (A)</mat-label>
+          <input matInput [value]="data.magnetron_6_I.toFixed(4)" readonly="true">
+        </mat-form-field>
+      </div>
+      <div fxLayout='row' fxLayoutGap="5px">
+        <mat-form-field>
+          <mat-label>U Magnetron 1 (V)</mat-label>
+          <input matInput [value]="data.magnetron_1_V.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>U Magnetron 2 (V)</mat-label>
+          <input matInput [value]="data.magnetron_2_V.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>U Magnetron 3 (V)</mat-label>
+          <input matInput [value]="data.magnetron_3_V.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>U Magnetron 4 (V)</mat-label>
+          <input matInput [value]="data.magnetron_4_V.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>U Magnetron 5 (V)</mat-label>
+          <input matInput [value]="data.magnetron_5_V.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>U Magnetron 6 (V)</mat-label>
+          <input matInput [value]="data.magnetron_6_V.toFixed(4)" readonly="true">
+        </mat-form-field>
+      </div>
+      <div class="container">
+        <mat-divider></mat-divider>
+      </div>
+      <div fxLayout='row' fxLayoutGap="5px">
+        <mat-form-field>
+          <mat-label>I Transfer Device 1 (A)</mat-label>
+          <input matInput [value]="data.transferDevice_1_I.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>U Transfer Device 1 (V)</mat-label>
+          <input matInput [value]="data.transferDevice_1_V.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>I Transfer Device 2 (A)</mat-label>
+          <input matInput [value]="data.transferDevice_2_I.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>U Transfer Device 2 (V)</mat-label>
+          <input matInput [value]="data.transferDevice_2_V.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>I Transfer Device 3 (A)</mat-label>
+          <input matInput [value]="data.transferDevice_3_I.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>U Transfer Device 3 (V)</mat-label>
+          <input matInput [value]="data.transferDevice_3_V.toFixed(4)" readonly="true">
+        </mat-form-field>
+      </div>
+      <div class="container">
+        <mat-divider></mat-divider>
+      </div>
+
+      <div fxLayout='row' fxLayoutGap="5px">
+        <mat-form-field>
+          <mat-label>Substrate Temperature 1</mat-label>
+          <input matInput [value]="data.substrateTemperature_1.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Substrate Temperature 2</mat-label>
+          <input matInput [value]="data.substrateTemperature_2.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Substrate Temperature 3</mat-label>
+          <input matInput [value]="data.substrateTemperature_3.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Substrate Temperature 4</mat-label>
+          <input matInput [value]="data.substrateTemperature_4.toFixed(4)" readonly="true">
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>Substrate Temperature 5</mat-label>
+          <input matInput [value]="data.substrateTemperature_5.toFixed(4)" readonly="true">
+        </mat-form-field>
+      </div>
+      <div fxLayout='row' fxLayoutGap="5px">
+        <mat-form-field>
+          <mat-label>Substrate Temperature 6</mat-label>
+          <input matInput [value]="data.substrateTemperature_6.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Substrate Temperature 7</mat-label>
+          <input matInput [value]="data.substrateTemperature_7.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Substrate Temperature 8</mat-label>
+          <input matInput [value]="data.substrateTemperature_8.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Substrate Temperature 9</mat-label>
+          <input matInput [value]="data.substrateTemperature_9.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Substrate Temperature 10</mat-label>
+          <input matInput [value]="data.substrateTemperature_10.toFixed(4)" readonly="true">
+        </mat-form-field>
+      </div>
+      <div fxLayout='row' fxLayoutGap="5px">
+        <mat-form-field>
+          <mat-label>Substrate Temperature 11</mat-label>
+          <input matInput [value]="data.substrateTemperature_11.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Substrate Temperature 12</mat-label>
+          <input matInput [value]="data.substrateTemperature_12.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Substrate Temperature 13</mat-label>
+          <input matInput [value]="data.substrateTemperature_13.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Substrate Temperature 14</mat-label>
+          <input matInput [value]="data.substrateTemperature_14.toFixed(4)" readonly="true">
+        </mat-form-field>
+      </div>
+      <div class="container">
+        <mat-divider></mat-divider>
+      </div>
+      <div fxLayout='row' fxLayoutGap="5px">
+        <mat-form-field>
+          <mat-label>Cell Temperature 1</mat-label>
+          <input matInput [value]="data.temperatureCell_1.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Cell Temperature 2</mat-label>
+          <input matInput [value]="data.temperatureCell_2.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Cell Temperature 3</mat-label>
+          <input matInput [value]="data.temperatureCell_3.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Cell Temperature 4</mat-label>
+          <input matInput [value]="data.temperatureCell_4.toFixed(4)" readonly="true">
+        </mat-form-field>
+      </div>
+      <div fxLayout='row' fxLayoutGap="5px">
+        <mat-form-field>
+          <mat-label>Manifold Temperature 1</mat-label>
+          <input matInput [value]="data.temperatureManifold_1.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Manifold Temperature 2</mat-label>
+          <input matInput [value]="data.temperatureManifold_2.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Manifold Temperature 3</mat-label>
+          <input matInput [value]="data.temperatureManifold_3.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Manifold Temperature 4</mat-label>
+          <input matInput [value]="data.temperatureManifold_4.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Cell Temperature NaF</mat-label>
+          <input matInput [value]="data.temperatureCell_NaF.toFixed(4)" readonly="true">
+        </mat-form-field>
+      </div>
+      <div class="container">
+        <mat-divider></mat-divider>
+      </div>
+      <div fxLayout='row' fxLayoutGap="5px">
+
+        <mat-form-field>
+          <mat-label>Turbo Pump Rqm</mat-label>
+          <input matInput [value]="data.turboRpm.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Substrate Rotation Speed (Rpm)</mat-label>
+          <input matInput [value]="data.substrateRotationSpeedRpm.toFixed(4)" readonly="true">
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Substrate Length (mm)</mat-label>
+          <input matInput [value]="data.substrateLengthMM.toFixed(4)" readonly="true">
+        </mat-form-field>
+      </div>
+    </div>
+  </div>
+</div>
