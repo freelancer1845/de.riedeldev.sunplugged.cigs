@@ -15,6 +15,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDialogModule } from '@angular/material/dialog';
+import { AreyousureComponent } from '../dialogs/areyousure/areyousure.component';
+
 @NgModule({
   declarations: [DataViewComponent, DataChartComponent, DataTableComponent],
   imports: [
@@ -29,7 +32,9 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
     MatIconModule,
     MatCardModule,
     MatCheckboxModule,
+    MatDialogModule,
   ],
   providers: [DatePipe],
+ 
 })
 export class DataModule { }

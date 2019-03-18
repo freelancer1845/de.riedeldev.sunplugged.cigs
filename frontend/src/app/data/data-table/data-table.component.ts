@@ -4,6 +4,8 @@ import { SessionService } from 'src/app/core/session.service';
 import { LogSession } from 'src/app/core/logging.service';
 import { saveAs } from 'file-saver';
 import { MatTableDataSource } from '@angular/material/table';
+import { MatDialog } from '@angular/material/dialog';
+import { AreyousureComponent } from 'src/app/dialogs/areyousure/areyousure.component';
 
 @Component({
   selector: 'app-data-table',
@@ -16,7 +18,7 @@ export class DataTableComponent implements OnInit {
   columnsToDisplay = ['startDate', 'endDate', 'actions'];
   sessions: LogSession[];
 
-  constructor(private service: SessionService) { }
+  constructor(private service: SessionService, private dialog: MatDialog) { }
 
   @Output() toChart = new EventEmitter<DataPoint[]>();
 
@@ -40,8 +42,12 @@ export class DataTableComponent implements OnInit {
   }
 
   deleteSession(session: LogSession) {
-    this.service.deleteSession(session).subscribe(v => {
-      this.dataSource.data = this.dataSource.data.filter(obj => obj.id !== session.id);
+    this.dialog.open(AreyousureComponent).afterClosed().subscribe(result => {
+      if (result) {
+        this.service.deleteSession(session).subscribe(v => {
+          this.dataSource.data = this.dataSource.data.filter(obj => obj.id !== session.id);
+        });
+      }
     });
   }
 

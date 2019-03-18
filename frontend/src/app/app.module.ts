@@ -14,12 +14,17 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialogModule } from '@angular/material/dialog';
+
+
 import { InjectableRxStompConfig, RxStompService, rxStompServiceFactory } from '@stomp/ng2-stompjs';
 import { MyRxStompConfig } from './rx-stomp.config';
+import { AreyousureComponent } from './dialogs/areyousure/areyousure.component';
 
 @NgModule({
   declarations: [
     AppComponent,
+    AreyousureComponent,
   ],
   imports: [
     BrowserModule,
@@ -35,6 +40,7 @@ import { MyRxStompConfig } from './rx-stomp.config';
     MatFormFieldModule,
     MatInputModule,
     MatCardModule,
+    MatDialogModule,
   ],
   providers: [
     {
@@ -47,6 +53,9 @@ import { MyRxStompConfig } from './rx-stomp.config';
       deps: [InjectableRxStompConfig]
     }
   ],
-  bootstrap: [AppComponent]
+  entryComponents: [
+    AreyousureComponent,
+  ],
+  bootstrap: [AppComponent],
 })
 export class AppModule { }
